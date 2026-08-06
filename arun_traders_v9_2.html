@@ -1,0 +1,3374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Arun Traders v9.1</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class'
+    }
+  </script>
+  <!-- FontAwesome for standard UI icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    /* 3-Inch Thermal Print Media Styles */
+    @media print {
+      body * {
+        visibility: hidden !important;
+      }
+      #thermalPrintArea, #thermalPrintArea * {
+        display: block !important;
+        visibility: visible !important;
+      }
+      #thermalPrintArea {
+        display: block !important;
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 72mm !important;
+        margin: 0 !important;
+        padding: 2mm !important;
+        background: #ffffff !important;
+        color: #000000 !important;
+        font-family: monospace, monospace !important;
+        font-size: 10px !important;
+        line-height: 1.2 !important;
+      }
+      @page {
+        size: 80mm auto;
+        margin: 0mm;
+      }
+    }
+  </style>
+</head>
+<body class="bg-[#f3f6f9] dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen transition-colors duration-200">
+
+  <!-- Toast Notification Overlay -->
+  <div id="toast-container" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-[110] flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- Hidden thermal printing area -->
+  <div id="thermalPrintArea" class="hidden"></div>
+
+  <!-- Hidden file input for direct JSON backup import -->
+  <input type="file" id="jsonBackupInput" accept=".json,application/json,.txt,text/plain" class="hidden" onchange="importJSONBackupFile(event)">
+
+  <!-- Header Section -->
+  <header class="pt-1.5 pb-0.5 px-4">
+    <div class="max-w-md mx-auto flex items-center justify-between">
+      <div class="flex flex-col items-start text-left">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">🏢</span>
+          <h1 class="text-lg font-black text-[#0f172a] dark:text-white tracking-tight">Arun Traders</h1>
+          <span class="bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 text-[9px] font-bold px-1.5 py-0.5 rounded-full">v9.1</span>
+        </div>
+        <p class="text-[10px] text-slate-500 dark:text-slate-400 font-medium mt-0.5">Price Directory & Stock Purchase</p>
+      </div>
+
+      <!-- Top Right Action Buttons -->
+      <div class="flex items-center gap-1.5 shrink-0">
+        <button type="button" onclick="openPrintModal()" class="w-8 h-8 flex items-center justify-center rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-xs transition-all active:scale-95" title="3-Inch Thermal Print">
+          <span class="text-sm">🖨️</span>
+        </button>
+        <button type="button" onclick="openStatsModal()" class="w-8 h-8 flex items-center justify-center rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-xs transition-all active:scale-95" title="Catalog Overview & Stats">
+          <span class="text-sm">📊</span>
+        </button>
+        <button type="button" onclick="toggleDarkMode()" class="w-8 h-8 flex items-center justify-center rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-xs transition-all active:scale-95" title="Toggle Dark Theme">
+          <span id="darkThemeHeaderIcon" class="text-sm">🌙</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- NAVIGATION TABS -->
+  <div class="max-w-md mx-auto px-4 mb-2">
+    <div class="bg-slate-200/60 dark:bg-slate-800 p-1 rounded-xl flex gap-1">
+      <button type="button" id="tab-directory" onclick="switchTab('directory')" class="flex-1 py-2 text-center text-xs font-bold rounded-lg transition-all duration-150 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 shadow-sm">
+        🏷️ Price Directory
+      </button>
+      <button type="button" id="tab-ledger" onclick="switchTab('ledger')" class="flex-1 py-2 text-center text-xs font-semibold rounded-lg transition-all duration-150 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200">
+        📦 Purchase Ledger
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Workspace -->
+  <main class="max-w-md mx-auto px-4 pb-12">
+
+    <!-- TAB 1: PRICE DIRECTORY -->
+    <section id="pane-directory" class="space-y-2">
+      
+      <!-- Search & Controls Bar -->
+      <div class="flex gap-1.5 items-center">
+        <div class="relative flex-1">
+          <span class="absolute inset-y-0 left-3 flex items-center pointer-events-none text-slate-400 text-xs">🔍</span>
+          <input type="text" id="searchQuery" oninput="filterItems()" placeholder="Search item or size..." class="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white focus:outline-none focus:border-blue-500 bg-white shadow-xs">
+        </div>
+        <button type="button" onclick="openAddItemModal()" class="bg-blue-600 text-white w-8 h-8 flex items-center justify-center rounded-xl hover:bg-blue-700 active:scale-95 transition-all shadow-sm shrink-0" title="Add Product">
+          <span class="text-base font-bold">+</span>
+        </button>
+
+        <!-- Import / Export Menu Button -->
+        <div class="relative shrink-0">
+          <button type="button" id="btn-import-export-main" onclick="toggleDropdown('import-export-dropdown', event)" class="bg-emerald-600 dark:bg-emerald-700 text-white w-8 h-8 flex items-center justify-center rounded-xl hover:bg-emerald-700 active:scale-95 transition-all shadow-sm" title="Import & Export Data">
+            <span class="text-xs font-bold">⇄</span>
+          </button>
+          
+          <!-- Import / Export Dropdown Panel -->
+          <div id="import-export-dropdown" class="hidden absolute right-0 top-10 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-lg shadow-xl py-1 w-52 z-50 text-slate-700 dark:text-slate-200 text-left text-xs font-normal">
+            <div class="px-3 py-1 text-[9px] font-extrabold text-slate-400 uppercase tracking-wider bg-slate-50 dark:bg-slate-700/50 border-b border-slate-100 dark:border-slate-700">Import Options</div>
+            <button type="button" onclick="openImportModal(); closeAllDropdowns();" class="w-full px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-2 border-b border-slate-100 dark:border-slate-700 font-semibold text-emerald-600 dark:text-emerald-400">
+              <span>📥</span> Import CSV Data
+            </button>
+            <label for="jsonBackupInput" onclick="closeAllDropdowns()" class="w-full px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-2 border-b border-slate-100 dark:border-slate-700 font-semibold text-blue-600 dark:text-blue-400 cursor-pointer">
+              <span>📥</span> Import JSON Backup
+            </label>
+
+            <div class="px-3 py-1 text-[9px] font-extrabold text-slate-400 uppercase tracking-wider bg-slate-50 dark:bg-slate-700/50 border-b border-slate-100 dark:border-slate-700 mt-1">Export Options</div>
+            <button type="button" onclick="exportCSVData('directory'); closeAllDropdowns();" class="w-full px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-2 border-b border-slate-100 dark:border-slate-700">
+              <span>📤</span> Export Directory CSV
+            </button>
+            <button type="button" onclick="exportCSVData('ledger'); closeAllDropdowns();" class="w-full px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-2 border-b border-slate-100 dark:border-slate-700">
+              <span>📤</span> Export Ledger CSV
+            </button>
+            <button type="button" onclick="exportJSONBackupDirect(); closeAllDropdowns();" class="w-full px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-2 border-b border-slate-100 dark:border-slate-700">
+              <span>📄</span> Export JSON Backup
+            </button>
+          </div>
+        </div>
+        
+        <!-- More Options Menu Button -->
+        <div class="relative shrink-0">
+          <button type="button" id="btn-options-main" onclick="toggleDropdown('options-dropdown', event)" class="bg-[#0f172a] dark:bg-slate-700 text-white w-8 h-8 flex items-center justify-center rounded-xl hover:bg-slate-800 active:scale-95 transition-all shadow-sm" title="More Options">
+            <span class="text-sm">⋮</span>
+          </button>
+          
+          <!-- Dropdown Panel -->
+          <div id="options-dropdown" class="hidden absolute right-0 top-10 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-lg shadow-xl py-1 w-52 z-50 text-slate-700 dark:text-slate-200 text-left text-xs font-normal">
+            <button type="button" onclick="openPrintModal()" class="w-full px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-2 border-b border-slate-100 dark:border-slate-700 font-semibold text-slate-800 dark:text-slate-100">
+              <span>🖨️</span> 3-Inch Thermal Print
+            </button>
+            <button type="button" onclick="openStatsModal()" class="w-full px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-2 border-b border-slate-100 dark:border-slate-700 font-semibold text-slate-800 dark:text-slate-100">
+              <span>📊</span> Catalog Overview & Stats
+            </button>
+            <button type="button" onclick="openBulkAddModal()" class="w-full px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-2 border-b border-slate-100 dark:border-slate-700">
+              <span>➕</span> Bulk Add Products
+            </button>
+            <button type="button" onclick="openBulkEditModal()" class="w-full px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-2 border-b border-slate-100 dark:border-slate-700">
+              <span>✏️</span> Bulk Edit Products
+            </button>
+            <button type="button" onclick="toggleCategoryTiles()" class="w-full px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center justify-between border-b border-slate-100 dark:border-slate-700">
+              <span class="flex items-center gap-2"><span>🏷️</span> Category Tiles</span>
+              <span id="categoryTilesBadge" class="bg-blue-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-full">ON</span>
+            </button>
+            <button type="button" onclick="toggleDarkMode()" class="w-full px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center justify-between border-b border-slate-100 dark:border-slate-700">
+              <span class="flex items-center gap-2"><span>🌙</span> Dark Theme</span>
+              <span id="darkThemeBadge" class="bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-[9px] font-bold px-2 py-0.5 rounded-full">OFF</span>
+            </button>
+            <button type="button" onclick="downloadOfflineApp()" class="w-full px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-700 text-blue-600 dark:text-blue-400 flex items-center gap-2 font-semibold">
+              <span>📱</span> Download Offline App
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2-Line Category Tiles Container -->
+      <div id="categoryTilesContainer" class="space-y-1 my-1.5"></div>
+
+      <!-- Categories Filter Bar -->
+      <div class="bg-white dark:bg-slate-800 p-1 rounded-xl border border-slate-100 dark:border-slate-700 flex gap-1.5 items-center shadow-xs overflow-visible relative">
+        <div class="relative flex-1 overflow-visible">
+          <input type="hidden" id="filterCategory" value="ALL">
+          <button type="button" id="categoryDropdownTrigger" onclick="toggleCategorySearchDropdown(event)" class="w-full text-left text-xs font-bold text-slate-700 dark:text-slate-200 py-1.5 px-2.5 border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50/50 dark:bg-slate-700/50 focus:outline-none flex justify-between items-center cursor-pointer">
+            <span id="selectedCategoryLabel">📁 All Categories</span>
+            <span class="text-slate-400 text-[8px]">▼</span>
+          </button>
+          
+          <div id="customCategoryDropdown" class="hidden absolute left-0 right-0 mt-1 max-h-[420px] overflow-y-auto bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl z-50 divide-y divide-slate-100 dark:divide-slate-700 text-xs no-scrollbar p-2 space-y-1">
+            <input type="text" id="categorySearchInput" oninput="filterCategoryDropdown()" placeholder="🔍 Type category to search..." class="w-full p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 bg-slate-50 dark:bg-slate-700 dark:text-white" autocomplete="off">
+            <div id="categoryOptionsContainer" class="max-h-[340px] overflow-y-auto no-scrollbar space-y-0.5 pt-1"></div>
+          </div>
+        </div>
+        <button type="button" onclick="openCategoryModal()" title="Configure Categories" class="bg-slate-50 dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 border border-slate-200 dark:border-slate-600 p-2 rounded-lg text-slate-600 dark:text-slate-200 active:scale-95 transition-all flex items-center justify-center shrink-0" style="height: 32px; width: 32px;">
+          <span class="text-xs">⚙️</span>
+        </button>
+      </div>
+
+      <!-- Main Directory Table Card -->
+      <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-visible">
+        <table class="w-full table-fixed overflow-visible border-collapse">
+          <thead>
+            <tr class="bg-[#0f172a] dark:bg-slate-900 text-white uppercase text-[9px] font-bold tracking-wider">
+              <th class="w-[45%] text-left py-3 px-3 rounded-tl-xl border-r border-slate-700/50">ITEM NAME</th>
+              <th class="w-[22%] text-center py-3 px-2 border-r border-slate-700/50">COST</th>
+              <th class="w-[22%] text-center py-3 px-2 border-r border-slate-700/50">SALE</th>
+              <th class="w-[11%] text-center py-3 !px-0 rounded-tr-xl"></th>
+            </tr>
+          </thead>
+          <tbody id="directoryTableBody" class="divide-y divide-slate-150 dark:divide-slate-700 text-xs overflow-visible"></tbody>
+        </table>
+        
+        <div id="directoryEmptyState" class="hidden py-16 text-center text-slate-400 text-xs bg-white dark:bg-slate-800 rounded-b-xl">
+          <span class="text-4xl block mb-3">🔍</span>
+          <div class="text-[14px] font-medium">No matching products found.</div>
+          <div class="text-[14px] mt-1">Click <strong class="text-blue-600 cursor-pointer" onclick="openAddItemModal()">+</strong> to add this item.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: PURCHASE LEDGER -->
+    <section id="pane-ledger" class="hidden space-y-3">
+
+      <!-- Date Filter Bar with Integrated Summary Tiles -->
+      <div class="bg-white dark:bg-slate-800 p-2.5 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase flex items-center gap-1">📅 Filter By Date</span>
+          <button type="button" onclick="resetLedgerDateFilter()" class="text-[10px] text-blue-600 dark:text-blue-400 font-semibold hover:underline">Reset Dates</button>
+        </div>
+        
+        <div class="flex gap-1 overflow-x-auto no-scrollbar">
+          <button type="button" id="ledgerDatePreset-today" onclick="setLedgerDatePreset('today')" class="px-2.5 py-1 text-[10px] font-bold rounded-lg transition-all bg-blue-600 text-white shadow-xs whitespace-nowrap">Today</button>
+          <button type="button" id="ledgerDatePreset-all" onclick="setLedgerDatePreset('all')" class="px-2.5 py-1 text-[10px] font-bold rounded-lg transition-all bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 whitespace-nowrap">All Time</button>
+          <button type="button" id="ledgerDatePreset-month" onclick="setLedgerDatePreset('month')" class="px-2.5 py-1 text-[10px] font-bold rounded-lg transition-all bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 whitespace-nowrap">This Month</button>
+          <button type="button" id="ledgerDatePreset-custom" onclick="setLedgerDatePreset('custom')" class="px-2.5 py-1 text-[10px] font-bold rounded-lg transition-all bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 whitespace-nowrap">Custom Range</button>
+        </div>
+
+        <div id="ledgerCustomDateInputs" class="hidden grid grid-cols-2 gap-2 pt-1 border-t border-slate-100 dark:border-slate-700">
+          <div>
+            <label class="block text-[9px] font-semibold text-slate-500 dark:text-slate-400 mb-0.5">FROM DATE</label>
+            <input type="date" id="ledgerDateFrom" onchange="filterLedger()" class="w-full p-1.5 border border-slate-200 dark:border-slate-700 dark:bg-slate-700 dark:text-white rounded-lg text-xs focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-[9px] font-semibold text-slate-500 dark:text-slate-400 mb-0.5">TO DATE</label>
+            <input type="date" id="ledgerDateTo" onchange="filterLedger()" class="w-full p-1.5 border border-slate-200 dark:border-slate-700 dark:bg-slate-700 dark:text-white rounded-lg text-xs focus:outline-none">
+          </div>
+        </div>
+
+        <!-- Integrated Ledger Summary Tiles -->
+        <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100 dark:border-slate-700">
+          <div class="bg-slate-50/70 dark:bg-slate-700/50 p-2.5 rounded-lg border border-slate-100 dark:border-slate-600/60 flex flex-col justify-center">
+            <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">TOTAL CAPITAL</span>
+            <span id="ledgerTotalCost" class="text-sm font-bold text-[#0f172a] dark:text-white mt-0.5">₹0.00</span>
+          </div>
+          <div class="bg-slate-50/70 dark:bg-slate-700/50 p-2.5 rounded-lg border border-slate-100 dark:border-slate-600/60 flex flex-col justify-center">
+            <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">TOTAL ORDERS</span>
+            <span id="ledgerTotalCount" class="text-sm font-bold text-blue-600 dark:text-blue-400 mt-0.5">0 Records</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action & Search Filter Panel -->
+      <div class="flex gap-2 items-center bg-white dark:bg-slate-800 p-2 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm">
+        <div class="relative flex-1">
+          <span class="absolute inset-y-0 left-2.5 flex items-center pointer-events-none text-slate-400 text-[10px]">🔍</span>
+          <input type="text" id="ledgerSearch" oninput="filterLedger()" placeholder="Search transactions..." class="w-full pl-7 pr-2 py-1.5 text-xs border border-slate-200 dark:border-slate-700 dark:bg-slate-700 dark:text-white rounded-lg focus:outline-none focus:border-emerald-500 bg-slate-50/50">
+        </div>
+        <button type="button" onclick="toggleStockForm()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3 py-2 rounded-lg transition-all active:scale-95 shadow-sm whitespace-nowrap">
+          🟢 Log Stock
+        </button>
+        <button type="button" onclick="confirmResetLedger()" class="bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 border border-rose-100 dark:border-rose-800 text-xs font-semibold px-2 py-2 rounded-lg hover:bg-rose-100 transition-all active:scale-95">
+          🗑️ Reset
+        </button>
+      </div>
+
+      <!-- New Entry stock logging drawer -->
+      <div id="stockFormContainer" class="hidden bg-white dark:bg-slate-800 p-4 rounded-xl border-l-4 border-emerald-500 shadow-sm space-y-3">
+        <h3 class="text-xs font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1">🟢 Log New Purchase Entry</h3>
+        <form id="purchaseForm" onsubmit="savePurchaseEntry(event)" class="space-y-3 text-xs">
+          <div class="relative">
+            <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Select Product</label>
+            <div class="relative">
+              <input type="text" id="purchaseItemSearch" onfocus="showPurchaseDropdown()" oninput="filterPurchaseDropdown()" placeholder="🔍 Type to search product..." class="w-full p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-slate-50 dark:bg-slate-700 dark:text-white" autocomplete="off" required>
+              <input type="hidden" id="purchaseItemId" required>
+              <div id="customPurchaseDropdown" class="hidden absolute left-0 right-0 mt-1 max-h-[380px] overflow-y-auto bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl z-50 divide-y divide-slate-100 dark:divide-slate-700 text-xs no-scrollbar"></div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Quantity</label>
+              <input type="number" id="purchaseQty" min="1" step="any" oninput="calculatePurchaseTotal()" class="w-full p-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-700 dark:text-white rounded-lg focus:outline-none" required>
+            </div>
+            <div>
+              <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Unit Cost (₹)</label>
+              <input type="number" id="purchaseUnitCost" step="any" oninput="calculatePurchaseTotal()" class="w-full p-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-700 dark:text-white rounded-lg focus:outline-none" required>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Purchase Date</label>
+              <input type="date" id="purchaseDate" class="w-full p-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-700 dark:text-white rounded-lg focus:outline-none" required>
+            </div>
+            <div>
+              <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Estimated Total</label>
+              <div id="purchaseTotalDisplay" class="p-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg font-bold text-slate-700 dark:text-slate-100">₹0.00</div>
+            </div>
+          </div>
+          <div class="flex justify-end gap-1.5 pt-1">
+            <button type="button" onclick="toggleStockForm()" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-200 rounded-lg">Cancel</button>
+            <button type="submit" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg">Save Entry</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Ledger Table -->
+      <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-visible">
+        <table class="w-full table-fixed overflow-visible border-collapse">
+          <thead>
+            <tr class="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 uppercase text-[9px] font-bold tracking-wider border-b border-slate-200 dark:border-slate-600">
+              <th class="w-[45%] text-left py-2.5 px-3 rounded-tl-xl border-r border-slate-200 dark:border-slate-600">ITEM DETAILS</th>
+              <th class="w-[22%] text-center py-2.5 px-2 border-r border-slate-200 dark:border-slate-600">DATE</th>
+              <th class="w-[22%] text-center py-2.5 px-2 border-r border-slate-200 dark:border-slate-600">UNIT COST</th>
+              <th class="w-[11%] text-center py-2.5 !px-0 rounded-tr-xl"></th>
+            </tr>
+          </thead>
+          <tbody id="ledgerTableBody" class="divide-y divide-slate-150 dark:divide-slate-700 text-xs overflow-visible"></tbody>
+        </table>
+
+        <div id="ledgerEmptyState" class="hidden py-12 text-center text-slate-400 text-xs bg-white dark:bg-slate-800 rounded-b-xl">
+          <span class="text-3xl block mb-2">📁</span>
+          <div>No purchases registered.</div>
+          <div class="mt-0.5">Tap <strong class="text-emerald-600 cursor-pointer" onclick="toggleStockForm()">🟢 Log Stock</strong> to add your first transaction.</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ================= MODALS & OVERLAYS ================= -->
+
+  <!-- MODAL: SMART IMPORT CSV WITH FIELD MAPPING -->
+  <div id="importModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs hidden items-start justify-center p-3 pt-6 sm:pt-10 z-50">
+    <div class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col max-h-[90vh]">
+      <div class="bg-blue-700 text-white px-4 py-3 font-semibold text-sm flex justify-between items-center shrink-0">
+        <span>📥 Import CSV & Field Mapping</span>
+        <button type="button" onclick="closeModal('importModal')" class="hover:text-slate-200 text-lg">&times;</button>
+      </div>
+      <div class="p-4 space-y-3 text-xs flex-1 overflow-y-auto no-scrollbar">
+        <!-- Step 1: Upload CSV -->
+        <div id="csvStepUpload" class="space-y-3">
+          <p class="leading-relaxed text-slate-600 dark:text-slate-300">Upload any CSV, TXT, or Excel-exported file. You can map custom columns on the next step.</p>
+          
+          <label class="border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl p-6 text-center hover:border-blue-500 transition-all bg-slate-50/50 dark:bg-slate-700/30 relative block cursor-pointer">
+            <input type="file" id="csvFileInput" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" accept=".csv,.txt,.tsv,text/csv,text/plain,application/vnd.ms-excel" onchange="handleCSVSelect(event)">
+            <span class="text-3xl block mb-2 pointer-events-none">📁</span>
+            <span class="font-semibold text-slate-700 dark:text-slate-200 block pointer-events-none">Choose CSV / Text File</span>
+            <span class="text-[10px] text-slate-400 mt-1 block pointer-events-none">Supports comma, semicolon, tab, or pipe-delimited files</span>
+          </label>
+        </div>
+
+        <!-- Step 2: Field Mapping -->
+        <div id="csvStepMapping" class="hidden space-y-3">
+          <div class="bg-blue-50 dark:bg-slate-700/50 p-2.5 rounded-lg border border-blue-100 dark:border-slate-600 flex justify-between items-center">
+            <div>
+              <span class="font-bold text-blue-800 dark:text-blue-300 block text-[11px] mb-0.5">📂 CSV File Loaded</span>
+              <span id="csvFileMeta" class="text-[10px] text-slate-600 dark:text-slate-300">0 rows detected</span>
+            </div>
+          </div>
+
+          <label class="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-700/60 p-2 rounded-lg border border-slate-200 dark:border-slate-600">
+            <input type="checkbox" id="csvHasHeaderToggle" checked onchange="toggleCSVHeaderOption()" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+            <span>First row contains column headers</span>
+          </label>
+
+          <p class="font-bold text-slate-700 dark:text-slate-200 text-[11px]">Map Columns to Product Fields:</p>
+
+          <div class="space-y-2">
+            <div>
+              <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Product Name <span class="text-rose-500">*</span></label>
+              <select id="mapColName" class="w-full p-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-700 text-xs focus:outline-none"></select>
+            </div>
+            <div>
+              <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Category</label>
+              <select id="mapColCategory" class="w-full p-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-700 text-xs focus:outline-none"></select>
+            </div>
+            <div>
+              <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Size / Package</label>
+              <select id="mapColSize" class="w-full p-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-700 text-xs focus:outline-none"></select>
+            </div>
+            <div>
+              <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Cost Price (₹)</label>
+              <select id="mapColCost" class="w-full p-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-700 text-xs focus:outline-none"></select>
+            </div>
+            <div>
+              <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Sale Price (₹)</label>
+              <select id="mapColSale" class="w-full p-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-700 text-xs focus:outline-none"></select>
+            </div>
+          </div>
+
+          <div class="pt-2 flex gap-2">
+            <button type="button" onclick="resetCSVModal()" class="flex-1 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-600 dark:text-slate-300 rounded-lg font-semibold text-center">Back</button>
+            <button type="button" onclick="executeMappedCSVImport()" class="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg text-center">Import Data</button>
+          </div>
+        </div>
+
+        <div id="csvFeedback" class="hidden bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 p-2.5 rounded-lg border border-emerald-100 dark:border-emerald-800 font-medium"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD / EDIT PRODUCT -->
+  <div id="itemModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs hidden items-start justify-center p-3 pt-6 sm:pt-10 z-50">
+    <div class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-xl shadow-2xl w-full max-w-sm overflow-visible">
+      <div class="bg-blue-600 text-white px-4 py-3 font-semibold text-sm flex justify-between items-center rounded-t-xl">
+        <span id="itemModalTitle">Add New Product</span>
+        <button type="button" onclick="closeModal('itemModal')" class="hover:text-slate-200 text-lg">&times;</button>
+      </div>
+      <form id="itemForm" onsubmit="saveItem(event)" class="p-4 space-y-3 text-xs">
+        <input type="hidden" id="editItemId">
+        <div>
+          <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Product Name</label>
+          <input type="text" id="itemName" placeholder="e.g. Whisper 50" class="w-full p-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-700 dark:text-white rounded-lg focus:outline-none focus:border-blue-500" required>
+        </div>
+        
+        <div class="relative">
+          <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Category</label>
+          <input type="hidden" id="itemCategory" value="General">
+          <button type="button" id="formCategoryTrigger" onclick="toggleFormCategoryPopover(event)" class="w-full text-left p-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50/50 dark:bg-slate-700/50 flex justify-between items-center font-bold text-slate-700 dark:text-slate-200">
+            <span id="formCategoryLabel">📁 General</span>
+            <span class="text-slate-400 text-[8px]">▼</span>
+          </button>
+
+          <div id="formCategoryPopover" class="hidden absolute left-0 right-0 mt-1 max-h-[460px] overflow-y-auto bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl z-50 divide-y divide-slate-100 dark:divide-slate-700 text-xs p-2 space-y-1">
+            <input type="text" id="formCategorySearchInput" oninput="filterFormCategoryPopover()" placeholder="🔍 Type to filter category..." class="w-full p-1.5 border border-slate-200 dark:border-slate-700 rounded-lg text-xs bg-slate-50 dark:bg-slate-700 dark:text-white focus:outline-none" autocomplete="off">
+            <div id="formCategoryOptionsList" class="max-h-[340px] overflow-y-auto space-y-0.5 pt-1 no-scrollbar"></div>
+            <div class="pt-1 text-center">
+              <button type="button" onclick="toggleInlineCategoryInput()" class="text-[10px] text-blue-600 dark:text-blue-400 font-bold hover:underline">
+                ➕ Create New Category
+              </button>
+            </div>
+            <div id="wrapper-input-category" class="hidden pt-2 border-t border-slate-100 dark:border-slate-700 space-y-1.5">
+              <div class="flex gap-1 items-center">
+                <input type="text" id="itemNewCategoryInput" placeholder="New category name..." class="flex-1 p-1.5 border border-slate-200 dark:border-slate-700 dark:bg-slate-700 dark:text-white rounded text-xs focus:outline-none">
+                <input type="color" id="itemNewCategoryColor" value="#3b82f6" class="w-7 h-7 p-0.5 border border-slate-200 rounded cursor-pointer bg-white">
+                <button type="button" onclick="saveInlineCategory()" class="bg-blue-600 text-white px-2 py-1 rounded text-xs font-semibold">Save</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Size / Package</label>
+            <input type="text" id="itemSize" placeholder="e.g. Pack of 5" class="w-full p-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-700 dark:text-white rounded-lg focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Cost Price (₹)</label>
+            <input type="number" id="itemCost" step="any" placeholder="0.00" class="w-full p-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-700 dark:text-white rounded-lg focus:outline-none" required>
+          </div>
+        </div>
+        
+        <div>
+          <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Sale Price (₹)</label>
+          <input type="number" id="itemSale" step="any" placeholder="0.00" class="w-full p-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-700 dark:text-white rounded-lg focus:outline-none" required>
+        </div>
+        
+        <div class="flex justify-end gap-1.5 pt-2">
+          <button type="button" onclick="closeModal('itemModal')" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-600 dark:text-slate-300 rounded-lg">Cancel</button>
+          <button type="submit" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg">Save Product</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: CONFIGURE CATEGORIES -->
+  <div id="categoryModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs hidden items-start justify-center p-3 pt-6 sm:pt-10 z-50">
+    <div class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col max-h-[90vh]">
+      <div class="bg-slate-800 dark:bg-slate-900 text-white px-4 py-3 font-semibold text-sm flex justify-between items-center">
+        <span>⚙️ Configure Categories</span>
+        <button type="button" onclick="closeModal('categoryModal')" class="hover:text-slate-200 text-lg">&times;</button>
+      </div>
+      <div class="p-4 space-y-3 flex-1 overflow-y-auto no-scrollbar">
+        <div class="flex gap-1.5 items-end">
+          <div class="flex-1">
+            <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Category Name</label>
+            <input type="text" id="newCategoryInput" placeholder="Category name..." class="w-full p-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-700 dark:text-white rounded-lg text-xs focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Color</label>
+            <input type="color" id="newCategoryColor" value="#3b82f6" class="w-9 h-8 p-0.5 border border-slate-200 rounded-lg cursor-pointer bg-white">
+          </div>
+          <button type="button" onclick="addNewCategory()" class="bg-slate-800 hover:bg-slate-900 text-white px-3 py-2 rounded-lg text-xs font-semibold active:scale-95 transition-all">Add</button>
+        </div>
+
+        <div class="space-y-1">
+          <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Active Categories & Custom Palette</label>
+          <div id="categoryManagerList" class="divide-y divide-slate-100 dark:divide-slate-700 border border-slate-100 dark:border-slate-700 rounded-lg p-1 space-y-1 bg-slate-50/50 dark:bg-slate-700/30"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: BULK ADD PRODUCTS -->
+  <div id="bulkAddModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs hidden items-start justify-center p-3 pt-6 sm:pt-10 z-50">
+    <div class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]">
+      <div class="bg-blue-900 text-white px-4 py-3 font-semibold text-sm flex justify-between items-center shrink-0">
+        <span>➕ Bulk Add Products</span>
+        <button type="button" onclick="closeModal('bulkAddModal')" class="hover:text-slate-200 text-lg">&times;</button>
+      </div>
+      <div class="p-4 space-y-3 flex-1 overflow-y-auto no-scrollbar text-xs">
+        <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-normal">
+          Add products line-by-line using comma formatting:
+          <br><strong class="text-slate-700 dark:text-slate-200">Product Name, Size, Cost Price, Sale Price, Category</strong>
+        </p>
+
+        <div class="bg-slate-50 dark:bg-slate-700/50 p-2.5 rounded-lg border border-slate-200 dark:border-slate-600 space-y-1">
+          <label class="block text-[10px] font-bold text-slate-600 dark:text-slate-300">⚡ QUICK INJECT CATEGORY</label>
+          <div class="flex gap-2">
+            <select id="bulkCategorySelector" class="flex-1 p-1.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-xs focus:outline-none"></select>
+            <button type="button" onclick="injectCategoryToBulk()" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-[11px] font-semibold">
+              Inject Name
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <textarea id="bulkTextarea" rows="7" oninput="validateBulkInput()" placeholder="Whisper 50, Pack of 5, 35.00, 35.00, P&G&#10;Sensodyne, Brush, 82.50, 82.50, General" class="w-full p-2.5 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg text-xs font-mono focus:outline-none"></textarea>
+        </div>
+
+        <div class="flex items-center justify-between bg-slate-100 dark:bg-slate-700 p-2 rounded-lg">
+          <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">Validation Report</span>
+          <span id="bulkStatusBadge" class="bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300 text-[10px] font-bold px-2 py-0.5 rounded-full">0 valid items detected</span>
+        </div>
+      </div>
+      <div class="bg-slate-50 dark:bg-slate-700/50 border-t border-slate-100 dark:border-slate-700 p-3 flex justify-end gap-1.5 shrink-0">
+        <button type="button" onclick="closeModal('bulkAddModal')" class="px-3 py-1.5 bg-slate-200 dark:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg text-xs">Cancel</button>
+        <button type="button" onclick="saveBulkItems()" class="px-4 py-1.5 bg-blue-600 text-white font-semibold rounded-lg text-xs">Import Products</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: BULK EDIT PRODUCTS -->
+  <div id="bulkEditModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs hidden items-start justify-center p-3 pt-6 sm:pt-10 z-50">
+    <div class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
+      <div class="bg-[#0f172a] text-white px-4 py-3 font-semibold text-sm flex justify-between items-center shrink-0">
+        <span>✏️ Bulk Edit Products</span>
+        <button type="button" onclick="closeModal('bulkEditModal')" class="hover:text-slate-200 text-lg">&times;</button>
+      </div>
+      
+      <div class="p-3 bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700 flex gap-2 shrink-0">
+        <input type="text" id="bulkEditSearch" oninput="renderBulkEditList()" placeholder="🔍 Search items..." class="flex-1 p-1.5 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 text-xs rounded-lg focus:outline-none">
+        <select id="bulkEditCategoryFilter" onchange="renderBulkEditList()" class="p-1.5 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 text-xs rounded-lg focus:outline-none font-semibold text-slate-700 dark:text-slate-200">
+          <option value="ALL">All Categories</option>
+        </select>
+      </div>
+
+      <div class="p-3 flex-1 overflow-y-auto no-scrollbar space-y-2 text-xs" id="bulkEditContainer"></div>
+
+      <div class="bg-slate-50 dark:bg-slate-700/50 border-t border-slate-200 dark:border-slate-700 p-3 flex justify-between items-center shrink-0">
+        <span id="bulkEditCountBadge" class="text-[10px] text-slate-500 font-bold uppercase">0 products listed</span>
+        <div class="flex gap-1.5">
+          <button type="button" onclick="closeModal('bulkEditModal')" class="px-3 py-1.5 bg-slate-200 dark:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg text-xs">Cancel</button>
+          <button type="button" onclick="saveBulkEditItems()" class="px-4 py-1.5 bg-blue-600 text-white font-semibold rounded-lg text-xs">Save All Changes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: SPREADSHEET EXPORTS -->
+  <div id="exportModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs hidden items-start justify-center p-3 pt-6 sm:pt-10 z-50">
+    <div class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-xl shadow-2xl w-full max-w-sm overflow-hidden">
+      <div class="bg-[#0f172a] text-white px-4 py-3 font-semibold text-sm flex justify-between items-center">
+        <span>📊 Spreadsheet Export Center</span>
+        <button type="button" onclick="closeModal('exportModal')" class="hover:text-slate-200 text-lg">&times;</button>
+      </div>
+      <div class="p-4 space-y-2 text-xs">
+        <p class="text-slate-500 dark:text-slate-400 mb-3 leading-relaxed">Download optimized spreadsheet modules ready for Excel or Google Sheets.</p>
+        
+        <button type="button" onclick="exportCSVData('directory')" class="w-full p-3 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-left flex items-center justify-between">
+          <div>
+            <strong class="text-slate-800 dark:text-slate-100 block text-xs">📦 Product Directory (CSV)</strong>
+            <span class="text-[10px] text-slate-400">Products, sizes, costs, and selling values.</span>
+          </div>
+          <span class="text-base text-slate-400">📥</span>
+        </button>
+
+        <button type="button" onclick="exportCSVData('ledger')" class="w-full p-3 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-left flex items-center justify-between">
+          <div>
+            <strong class="text-slate-800 dark:text-slate-100 block text-xs">📖 Purchase Ledger logs (CSV)</strong>
+            <span class="text-[10px] text-slate-400">Raw purchase entries with dates and costs.</span>
+          </div>
+          <span class="text-base text-slate-400">📥</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: SNAPSHOTS & BACKUP MANAGER -->
+  <div id="backupModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs hidden items-start justify-center p-3 pt-6 sm:pt-10 z-50">
+    <div class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]">
+      <div class="bg-slate-100 dark:bg-slate-700 border-b border-slate-200 dark:border-slate-600 px-4 py-3 font-semibold text-sm flex justify-between items-center">
+        <span class="flex items-center gap-1.5">💾 Snapshot Manager</span>
+        <button type="button" onclick="closeModal('backupModal')" class="hover:text-slate-200 text-slate-500 text-lg">&times;</button>
+      </div>
+      <div class="p-4 space-y-3 flex-1 overflow-y-auto no-scrollbar text-xs">
+        <div class="space-y-1.5">
+          <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase">Create Local Snapshot</label>
+          <div class="flex gap-2">
+            <input type="text" id="backupNameInput" placeholder="e.g. Pre-Audit July" class="flex-1 p-2 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg text-xs focus:outline-none">
+            <button type="button" onclick="createNewBackupSnapshot()" class="bg-slate-800 dark:bg-slate-900 text-white px-4 py-2 rounded-lg font-semibold">Take Snapshot</button>
+          </div>
+        </div>
+
+        <div class="space-y-1.5">
+          <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase">Local Recovery Points</label>
+          <div id="localBackupList" class="divide-y divide-slate-100 dark:divide-slate-700 border border-slate-100 dark:border-slate-700 rounded-lg bg-slate-50/40 dark:bg-slate-700/30 max-h-48 overflow-y-auto"></div>
+        </div>
+
+        <div class="space-y-1.5 pt-2 border-t border-slate-100 dark:border-slate-700">
+          <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase">Import JSON Backup File</label>
+          <div class="flex gap-2">
+            <label for="jsonBackupInput" class="w-full p-2.5 bg-blue-50 dark:bg-slate-700 text-blue-700 dark:text-blue-300 rounded-lg border border-blue-200 dark:border-slate-600 font-bold text-center hover:bg-blue-100 transition-colors cursor-pointer block">
+              📥 Load Snapshot / Catalog File (.json)
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CATALOG STATS OVERVIEW -->
+  <div id="statsModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs hidden items-start justify-center p-3 pt-6 sm:pt-10 z-50">
+    <div class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col max-h-[90vh]">
+      <div class="bg-[#0f172a] text-white px-4 py-3 font-semibold text-sm flex justify-between items-center shrink-0">
+        <span class="flex items-center gap-1.5">📊 Catalog Overview & Stats</span>
+        <button type="button" onclick="closeModal('statsModal')" class="hover:text-slate-200 text-lg">&times;</button>
+      </div>
+      <div id="statsModalBody" class="p-4 space-y-3 flex-1 overflow-y-auto no-scrollbar text-xs"></div>
+    </div>
+  </div>
+
+  <!-- MODAL: ITEM PURCHASE HISTORY -->
+  <div id="historyModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs hidden items-start justify-center p-3 pt-6 sm:pt-10 z-50">
+    <div class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col max-h-[85vh]">
+      <div class="bg-[#0f172a] text-white px-4 py-3 font-semibold text-sm flex justify-between items-center shrink-0">
+        <span id="historyModalTitle" class="truncate pr-2">Purchase History</span>
+        <button type="button" onclick="closeModal('historyModal')" class="hover:text-slate-200 text-lg">&times;</button>
+      </div>
+      <div class="p-3 bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700 flex justify-between text-xs shrink-0">
+        <div>
+          <span class="text-[9px] font-bold text-slate-400 uppercase block">Total Purchased</span>
+          <span id="historyTotalQty" class="font-bold text-slate-800 dark:text-slate-100">0 Units</span>
+        </div>
+        <div class="text-right">
+          <span class="text-[9px] font-bold text-slate-400 uppercase block">Avg Buy Price</span>
+          <span id="historyAvgPrice" class="font-bold text-emerald-600 dark:text-emerald-400">₹0.00</span>
+        </div>
+      </div>
+      <div class="p-2 flex-1 overflow-y-auto no-scrollbar">
+        <table class="w-full text-left text-xs border-collapse">
+          <thead>
+            <tr class="border-b border-slate-200 dark:border-slate-700 text-[10px] text-slate-400 uppercase font-bold">
+              <th class="py-1.5 px-3">Date</th>
+              <th class="py-1.5 px-2 text-right">Qty</th>
+              <th class="py-1.5 px-3 text-right">Unit Price</th>
+            </tr>
+          </thead>
+          <tbody id="historyTableBody" class="divide-y divide-slate-100 dark:divide-slate-700"></tbody>
+        </table>
+        <div id="historyEmptyState" class="hidden text-center text-slate-400 py-8 text-xs">
+          No purchase logs registered for this product yet.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: 3-INCH THERMAL PRINT CENTER -->
+  <div id="printModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs hidden items-start justify-center p-3 pt-6 sm:pt-10 z-50">
+    <div class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]">
+      <div class="bg-[#0f172a] text-white px-4 py-3 font-semibold text-sm flex justify-between items-center shrink-0">
+        <span class="flex items-center gap-1.5">🖨️ 3-Inch Thermal Print</span>
+        <button type="button" onclick="closeModal('printModal')" class="hover:text-slate-200 text-lg">&times;</button>
+      </div>
+      <div class="p-4 space-y-3 flex-1 overflow-y-auto no-scrollbar text-xs">
+        <div class="relative">
+          <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Select Category to Print</label>
+          <input type="hidden" id="printCategorySelect" value="ALL">
+          <button type="button" id="printCategoryTrigger" onclick="togglePrintCategoryPopover(event)" class="w-full text-left p-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50/50 dark:bg-slate-700/50 flex justify-between items-center font-bold text-slate-700 dark:text-slate-200">
+            <span id="printCategoryLabel">📁 ALL CATEGORIES</span>
+            <span class="text-slate-400 text-[8px]">▼</span>
+          </button>
+
+          <div id="printCategoryPopover" class="hidden absolute left-0 right-0 mt-1 max-h-[420px] overflow-y-auto bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl z-50 divide-y divide-slate-100 dark:divide-slate-700 text-xs p-2 space-y-1">
+            <input type="text" id="printCategorySearchInput" oninput="filterPrintCategoryPopover()" placeholder="🔍 Type to search category..." class="w-full p-1.5 border border-slate-200 dark:border-slate-700 rounded-lg text-xs bg-slate-50 dark:bg-slate-700 dark:text-white focus:outline-none" autocomplete="off">
+            <div id="printCategoryOptionsContainer" class="max-h-[340px] overflow-y-auto space-y-0.5 pt-1 no-scrollbar"></div>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Select Columns to Include</label>
+          <div class="grid grid-cols-2 gap-2 bg-slate-50 dark:bg-slate-700/50 p-2.5 rounded-lg border border-slate-200 dark:border-slate-600">
+            <label class="flex items-center gap-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 cursor-pointer">
+              <input type="checkbox" id="chkPrintName" checked onchange="renderPrintPreview()" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+              <span>Item Name</span>
+            </label>
+            <label class="flex items-center gap-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 cursor-pointer">
+              <input type="checkbox" id="chkPrintSize" checked onchange="renderPrintPreview()" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+              <span>Size / Package</span>
+            </label>
+            <label class="flex items-center gap-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 cursor-pointer">
+              <input type="checkbox" id="chkPrintCost" checked onchange="renderPrintPreview()" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+              <span>Cost Price</span>
+            </label>
+            <label class="flex items-center gap-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 cursor-pointer">
+              <input type="checkbox" id="chkPrintSale" checked onchange="renderPrintPreview()" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+              <span>Sale Price</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 font-semibold">
+          <div class="flex items-center gap-1.5">
+            <span>Bluetooth Printer:</span>
+            <span id="btStatusBadge" class="text-[9px] font-bold text-slate-500 bg-slate-100 dark:bg-slate-700 dark:text-slate-400 px-2 py-0.5 rounded-full">Disconnected</span>
+          </div>
+          <span id="printItemCountBadge" class="font-bold text-blue-600 dark:text-blue-400">0 Items</span>
+        </div>
+
+        <div class="bg-slate-100 dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-700 flex justify-center">
+          <div id="thermalPreviewBox" class="bg-white text-black p-3 w-[280px] shadow-md font-mono text-[10px] leading-tight border border-slate-300 rounded"></div>
+        </div>
+      </div>
+      <div class="bg-slate-50 dark:bg-slate-700/50 border-t border-slate-200 dark:border-slate-700 p-3 flex justify-between items-center gap-2 shrink-0">
+        <button type="button" onclick="connectBluetoothPrinter()" class="px-2.5 py-2 bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-semibold flex items-center gap-1">
+          <span>📶</span> Connect BT
+        </button>
+        <div class="flex gap-1.5">
+          <button type="button" onclick="triggerBluetoothPrint()" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-sm">
+            <span>📱</span> BT Print
+          </button>
+          <button type="button" onclick="triggerThermalPrint()" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-sm">
+            <span>🖨️</span> System Print
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HIGH-PRIORITY CONFIRMATION MODAL -->
+  <div id="confirmModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs hidden items-start justify-center p-3 pt-12 sm:pt-16 z-[100]">
+    <div class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg shadow-2xl w-full max-w-xs overflow-hidden">
+      <div class="bg-rose-600 text-white px-3 py-2 font-semibold text-xs flex justify-between items-center">
+        <span>⚠️ Confirmation Required</span>
+        <button type="button" onclick="closeModal('confirmModal')" class="hover:text-slate-200">&times;</button>
+      </div>
+      <div class="p-4 text-xs text-slate-600 dark:text-slate-300 leading-normal" id="confirmModalText">
+        Are you sure you want to proceed?
+      </div>
+      <div class="bg-slate-50 dark:bg-slate-700/50 p-2.5 flex justify-end gap-1.5 border-t border-slate-100 dark:border-slate-700">
+        <button type="button" id="confirmCancelBtn" onclick="closeModal('confirmModal')" class="px-3 py-1 bg-slate-200 dark:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg text-xs">Cancel</button>
+        <button type="button" id="confirmProceedBtn" class="px-3 py-1 bg-rose-600 text-white rounded-lg text-xs font-semibold">Proceed</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="text-center py-6 text-[10px] text-slate-400">
+    Arun Traders Price Directory &copy; 2026 | All data is stored locally in your browser.
+  </div>
+
+  <!-- ======================== APPLICATION SCRIPT ======================== -->
+  <script>
+    let appState = {
+      items: [],
+      categories: [
+        { name: "General", color: "#64748b" },
+        { name: "P&G", color: "#3b82f6" },
+        { name: "Sudarshan", color: "#10b981" },
+        { name: "Paramesh", color: "#8b5cf6" },
+        { name: "Raviteja Coffee works", color: "#f59e0b" },
+        { name: "Desai", color: "#ec4899" },
+        { name: "Beedi", color: "#ef4444" },
+        { name: "Grocery", color: "#14b8a6" },
+        { name: "Oil", color: "#eab308" }
+      ],
+      purchaseRecords: [],
+      backups: [],
+      darkMode: false,
+      showCategoryTiles: true
+    };
+
+    let parsedCSVData = {
+      headers: [],
+      rows: [],
+      rawRows: []
+    };
+
+    const defaultCatalog = [
+      {"id": 1, "name": "Sensodyne 2+1 brush", "cost": 82.5, "sale": 82.5, "category": "General", "size": "Pack of 3"},
+      {"id": 2, "name": "Whisper 50", "cost": 35, "sale": 35, "category": "P&G", "size": "Pack of 5"},
+      {"id": 3, "name": "Savige 10", "cost": 6, "sale": 7, "category": "Paramesh", "size": "Standard"},
+      {"id": 4, "name": "Jumbo 1rs", "cost": 472, "sale": 472, "category": "General", "size": "Box"}
+    ];
+    const STORAGE_KEY = 'arun_traders_v9_1_state';
+    const PREVIOUS_KEYS = ['arun_traders_v9_0_state', 'arun_traders_v8_6_state', 'arun_traders_v8_0_state', 'arun_traders_v7_7_state', 'arun_traders_v7_3_state', 'arun_traders_v7_2_state', 'arun_traders_v7_1_state', 'arun_traders_v7_0_state', 'arun_traders_v6_9_state'];
+
+    window.onload = function() {
+      loadState();
+      switchTab('directory');
+      
+      // Global input sanitizer: Strip ₹ symbol from all text & textarea inputs
+      document.addEventListener('input', function(e) {
+        if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') && e.target.type !== 'number' && e.target.type !== 'date' && e.target.type !== 'color') {
+          if (e.target.value.includes('₹')) {
+            e.target.value = e.target.value.replace(/₹/g, '');
+          }
+        }
+      });
+
+      document.addEventListener('click', function(e) {
+        closeAllDropdowns(e);
+        
+        const categoryDropdown = document.getElementById('customCategoryDropdown');
+        const categoryTrigger = document.getElementById('categoryDropdownTrigger');
+        if (categoryDropdown && !categoryDropdown.contains(e.target) && !categoryTrigger.contains(e.target)) {
+          categoryDropdown.classList.add('hidden');
+        }
+
+        const formCatPopover = document.getElementById('formCategoryPopover');
+        const formCatTrigger = document.getElementById('formCategoryTrigger');
+        if (formCatPopover && !formCatPopover.contains(e.target) && !formCatTrigger.contains(e.target)) {
+          formCatPopover.classList.add('hidden');
+        }
+        
+        const printCatPopover = document.getElementById('printCategoryPopover');
+        const printCatTrigger = document.getElementById('printCategoryTrigger');
+        if (printCatPopover && !printCatPopover.contains(e.target) && !printCatTrigger.contains(e.target)) {
+          printCatPopover.classList.add('hidden');
+        }
+
+        const searchBox = document.getElementById('purchaseItemSearch');
+        const dropdown = document.getElementById('customPurchaseDropdown');
+        if (dropdown && searchBox && !searchBox.contains(e.target) && !dropdown.contains(e.target)) {
+          dropdown.classList.add('hidden');
+        }
+
+        if (!e.target.closest('.bulk-edit-cat-popover') && !e.target.closest('[id^="bulk-cat-trigger-"]')) {
+          document.querySelectorAll('.bulk-edit-cat-popover').forEach(p => p.classList.add('hidden'));
+        }
+      });
+    };
+
+    function setupDefaultCatalog() {
+      appState.items = defaultCatalog.map(i => ({ ...i, updatedAt: new Date().toISOString() }));
+    }
+
+    function escapeAttr(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/'/g, '&#39;')
+        .replace(/"/g, '&quot;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
+
+    function cleanThermalText(str) {
+      if (str === null || str === undefined) return '';
+      return String(str).replace(/₹/g, '').trim();
+    }
+
+    function parsePrice(val) {
+      if (val === null || val === undefined) return 0;
+      if (typeof val === 'number') return isNaN(val) ? 0 : val;
+      const str = String(val).trim();
+      if (!str) return 0;
+      const cleaned = str.replace(/₹/g, '').replace(/Rs\.?/gi, '').replace(/,/g, '').replace(/[^0-9.]/g, '');
+      const num = parseFloat(cleaned);
+      return isNaN(num) ? 0 : num;
+    }
+
+    function loadState() {
+      let stored = localStorage.getItem(STORAGE_KEY);
+      
+      if (!stored) {
+        for (const prevKey of PREVIOUS_KEYS) {
+          const prevData = localStorage.getItem(prevKey);
+          if (prevData) {
+            stored = prevData;
+            break;
+          }
+        }
+      }
+
+      if (stored) {
+        try {
+          appState = JSON.parse(stored);
+        } catch (e) {
+          setupDefaultCatalog();
+        }
+      } else {
+        setupDefaultCatalog();
+      }
+      
+      if (appState.darkMode === undefined) appState.darkMode = false;
+      if (appState.showCategoryTiles === undefined) appState.showCategoryTiles = true;
+
+      if (appState.categories) {
+        appState.categories.forEach(c => {
+          if (c.name && c.name.toLowerCase() === 'uncategorized') c.name = 'General';
+        });
+      }
+      if (appState.items) {
+        appState.items.forEach(item => {
+          if (!item.category || item.category.toLowerCase() === 'uncategorized') item.category = 'General';
+          if (item.cost === undefined) item.cost = parsePrice(item.price);
+          else item.cost = parsePrice(item.cost);
+          if (item.sale === undefined) item.sale = parsePrice(item.price);
+          else item.sale = parsePrice(item.sale);
+          if (!item.size) item.size = '';
+          if (!item.updatedAt) item.updatedAt = new Date().toISOString();
+        });
+      }
+
+      verifyCategoryColors();
+      applyTheme();
+      applyCategoryTilesVisibility();
+      saveState();
+      populateCategorySelectors();
+      renderDirectory();
+      setLedgerDatePreset('today');
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+      } catch (e) {
+        console.error("Error saving state to localStorage:", e);
+      }
+    }
+
+    let ledgerDateFilterMode = 'today';
+
+    function setLedgerDatePreset(mode) {
+      ledgerDateFilterMode = mode;
+      const presets = ['today', 'all', 'month', 'custom'];
+      
+      presets.forEach(p => {
+        const btn = document.getElementById(`ledgerDatePreset-${p}`);
+        if (!btn) return;
+        if (p === mode) {
+          btn.className = "px-2.5 py-1 text-[10px] font-bold rounded-lg transition-all bg-blue-600 text-white shadow-xs whitespace-nowrap";
+        } else {
+          btn.className = "px-2.5 py-1 text-[10px] font-bold rounded-lg transition-all bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 whitespace-nowrap";
+        }
+      });
+
+      const customContainer = document.getElementById('ledgerCustomDateInputs');
+      const todayStr = new Date().toISOString().split('T')[0];
+
+      if (mode === 'all') {
+        customContainer.classList.add('hidden');
+        document.getElementById('ledgerDateFrom').value = '';
+        document.getElementById('ledgerDateTo').value = '';
+      } else if (mode === 'today') {
+        customContainer.classList.add('hidden');
+        document.getElementById('ledgerDateFrom').value = todayStr;
+        document.getElementById('ledgerDateTo').value = todayStr;
+      } else if (mode === 'month') {
+        customContainer.classList.add('hidden');
+        const now = new Date();
+        const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+        document.getElementById('ledgerDateFrom').value = firstDay;
+        document.getElementById('ledgerDateTo').value = todayStr;
+      } else if (mode === 'custom') {
+        customContainer.classList.remove('hidden');
+      }
+
+      filterLedger();
+    }
+
+    function resetLedgerDateFilter() {
+      setLedgerDatePreset('today');
+    }
+
+    function verifyCategoryColors() {
+      if (!appState.categories) appState.categories = [];
+      const defaultColors = ["#3b82f6", "#10b981", "#8b5cf6", "#f59e0b", "#ec4899", "#ef4444", "#14b8a6", "#eab308"];
+      
+      if (!appState.categories.some(c => c.name.toLowerCase() === 'general')) {
+        appState.categories.unshift({ name: "General", color: "#64748b" });
+      }
+
+      if (appState.items) {
+        appState.items.forEach(item => {
+          const catName = (item.category || "General").trim();
+          if (catName && !appState.categories.some(c => c.name.toLowerCase() === catName.toLowerCase())) {
+            const nextColor = defaultColors[appState.categories.length % defaultColors.length];
+            appState.categories.push({ name: catName, color: nextColor });
+          }
+        });
+      }
+
+      appState.categories.forEach((c, idx) => {
+        if (!c.color) c.color = defaultColors[idx % defaultColors.length];
+      });
+    }
+
+    function toggleDarkMode() {
+      appState.darkMode = !appState.darkMode;
+      saveState();
+      applyTheme();
+      showToast(appState.darkMode ? "Dark Theme Enabled" : "Light Theme Enabled", "info");
+    }
+
+    function applyTheme() {
+      const badge = document.getElementById('darkThemeBadge');
+      const headerIcon = document.getElementById('darkThemeHeaderIcon');
+      if (appState.darkMode) {
+        document.documentElement.classList.add('dark');
+        if (badge) {
+          badge.innerText = "ON";
+          badge.className = "bg-blue-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-full";
+        }
+        if (headerIcon) {
+          headerIcon.innerText = "☀️";
+        }
+      } else {
+        document.documentElement.classList.remove('dark');
+        if (badge) {
+          badge.innerText = "OFF";
+          badge.className = "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-[9px] font-bold px-2 py-0.5 rounded-full";
+        }
+        if (headerIcon) {
+          headerIcon.innerText = "🌙";
+        }
+      }
+    }
+
+    function toggleCategoryTiles() {
+      appState.showCategoryTiles = !appState.showCategoryTiles;
+      saveState();
+      applyCategoryTilesVisibility();
+      showToast(appState.showCategoryTiles ? "Category tiles enabled" : "Category tiles hidden", "info");
+    }
+
+    function applyCategoryTilesVisibility() {
+      const container = document.getElementById('categoryTilesContainer');
+      const badge = document.getElementById('categoryTilesBadge');
+      
+      if (appState.showCategoryTiles === undefined) appState.showCategoryTiles = true;
+      
+      if (container) {
+        if (appState.showCategoryTiles) {
+          container.classList.remove('hidden');
+          renderCategoryTiles();
+        } else {
+          container.classList.add('hidden');
+        }
+      }
+      
+      if (badge) {
+        if (appState.showCategoryTiles) {
+          badge.innerText = "ON";
+          badge.className = "bg-blue-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-full";
+        } else {
+          badge.innerText = "OFF";
+          badge.className = "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-[9px] font-bold px-2 py-0.5 rounded-full";
+        }
+      }
+    }
+
+    function switchTab(tab) {
+      const dirPane = document.getElementById('pane-directory');
+      const ledgerPane = document.getElementById('pane-ledger');
+      const dirTab = document.getElementById('tab-directory');
+      const ledgerTab = document.getElementById('tab-ledger');
+
+      if (tab === 'directory') {
+        dirPane.classList.remove('hidden');
+        ledgerPane.classList.add('hidden');
+        dirTab.className = "flex-1 py-2 text-center text-xs font-bold rounded-lg transition-all duration-150 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 shadow-sm";
+        ledgerTab.className = "flex-1 py-2 text-center text-xs font-semibold rounded-lg transition-all duration-150 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200";
+      } else {
+        dirPane.classList.add('hidden');
+        ledgerPane.classList.remove('hidden');
+        ledgerTab.className = "flex-1 py-2 text-center text-xs font-bold rounded-lg transition-all duration-150 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 shadow-sm";
+        dirTab.className = "flex-1 py-2 text-center text-xs font-semibold rounded-lg transition-all duration-150 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200";
+      }
+    }
+
+    function showModal(id) {
+      const modal = document.getElementById(id);
+      if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+      }
+    }
+
+    function closeModal(id) {
+      const modal = document.getElementById(id);
+      if (modal) {
+        modal.classList.remove('flex');
+        modal.classList.add('hidden');
+      }
+    }
+
+    function toggleDropdown(id, event) {
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      const dd = document.getElementById(id);
+      const wasHidden = dd.classList.contains('hidden');
+      closeAllDropdowns();
+      if (wasHidden) {
+        dd.classList.remove('hidden');
+      }
+    }
+
+    function closeAllDropdowns(e) {
+      const mainDd = document.getElementById('options-dropdown');
+      if (mainDd && (!e || !e.target.closest('#btn-options-main'))) {
+        mainDd.classList.add('hidden');
+      }
+
+      const ieDd = document.getElementById('import-export-dropdown');
+      if (ieDd && (!e || !e.target.closest('#btn-import-export-main'))) {
+        ieDd.classList.add('hidden');
+      }
+
+      if (!e || (!e.target.closest('.action-menu-btn') && !e.target.closest('.action-dropdown-box'))){
+        const rowMenus = document.querySelectorAll('.action-dropdown-box');
+        rowMenus.forEach(menu => menu.classList.add('hidden'));
+      }
+    }
+
+    function openPrintModal() {
+      closeAllDropdowns();
+      populatePrintCategorySelect();
+      renderPrintPreview();
+      showModal('printModal');
+    }
+
+    function populatePrintCategorySelect() {
+      const hiddenInput = document.getElementById('printCategorySelect');
+      if (!hiddenInput) return;
+      let currentVal = hiddenInput.value || 'ALL';
+      if (currentVal !== 'ALL' && !appState.categories.some(c => c.name === currentVal)) {
+        currentVal = 'ALL';
+      }
+      selectPrintCategory(currentVal);
+    }
+
+    function togglePrintCategoryPopover(event) {
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      const popover = document.getElementById('printCategoryPopover');
+      if (!popover) return;
+      const wasHidden = popover.classList.contains('hidden');
+      closeAllDropdowns();
+      if (wasHidden) {
+        popover.classList.remove('hidden');
+        const searchInput = document.getElementById('printCategorySearchInput');
+        if (searchInput) {
+          searchInput.value = '';
+          searchInput.focus();
+        }
+        renderPrintCategoryOptions();
+      }
+    }
+
+    function filterPrintCategoryPopover() {
+      renderPrintCategoryOptions();
+    }
+
+    function renderPrintCategoryOptions() {
+      const container = document.getElementById('printCategoryOptionsContainer');
+      const searchInput = document.getElementById('printCategorySearchInput');
+      if (!container) return;
+      container.innerHTML = '';
+
+      const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+
+      if (!query || 'all categories'.includes(query)) {
+        const allBtn = document.createElement('button');
+        allBtn.type = "button";
+        allBtn.className = "w-full text-left px-3 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg flex items-center gap-2 font-bold text-slate-700 dark:text-slate-200 transition-colors";
+        allBtn.innerHTML = `<span>📁</span> ALL CATEGORIES`;
+        allBtn.onclick = function() {
+          selectPrintCategory('ALL');
+        };
+        container.appendChild(allBtn);
+      }
+
+      appState.categories.forEach(c => {
+        if (!query || c.name.toLowerCase().includes(query)) {
+          const catBtn = document.createElement('button');
+          catBtn.type = "button";
+          catBtn.className = "w-full text-left px-3 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg flex items-center justify-between transition-colors";
+          catBtn.innerHTML = `
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full" style="background-color: ${c.color}"></span>
+              <span class="text-slate-700 dark:text-slate-200 font-semibold">${escapeAttr(c.name)}</span>
+            </div>
+          `;
+          catBtn.onclick = function() {
+            selectPrintCategory(c.name);
+          };
+          container.appendChild(catBtn);
+        }
+      });
+    }
+
+    function selectPrintCategory(catName) {
+      const hiddenInput = document.getElementById('printCategorySelect');
+      const labelSpan = document.getElementById('printCategoryLabel');
+      const popover = document.getElementById('printCategoryPopover');
+
+      if (hiddenInput) hiddenInput.value = catName;
+
+      if (labelSpan) {
+        if (catName === 'ALL') {
+          labelSpan.innerHTML = `📁 ALL CATEGORIES`;
+        } else {
+          const catObj = appState.categories.find(c => c.name === catName);
+          const colorDot = catObj ? `<span class="inline-block w-2.5 h-2.5 rounded-full mr-2" style="background-color: ${catObj.color}"></span>` : '📂 ';
+          labelSpan.innerHTML = `${colorDot}${escapeAttr(catName)}`;
+        }
+      }
+
+      if (popover) popover.classList.add('hidden');
+      renderPrintPreview();
+    }
+
+    function openStatsModal() {
+      closeAllDropdowns();
+      renderStatsModal();
+      showModal('statsModal');
+    }
+
+    function renderStatsModal() {
+      const container = document.getElementById('statsModalBody');
+      if (!container) return;
+      
+      const totalProducts = appState.items.length;
+      const totalCategories = appState.categories.length;
+      const totalLedgerLogs = appState.purchaseRecords.length;
+      
+      let totalCatalogCostVal = 0;
+      let totalCatalogSaleVal = 0;
+      
+      appState.items.forEach(item => {
+        totalCatalogCostVal += (Number(item.cost) || 0);
+        totalCatalogSaleVal += (Number(item.sale) || 0);
+      });
+      
+      const estMargin = totalCatalogSaleVal - totalCatalogCostVal;
+
+      container.innerHTML = `
+        <div class="grid grid-cols-2 gap-2">
+          <div class="bg-slate-50 dark:bg-slate-700/50 p-3 rounded-xl border border-slate-200 dark:border-slate-600">
+            <span class="text-[9px] font-bold text-slate-400 uppercase block">Total Products</span>
+            <span class="text-base font-bold text-blue-600 dark:text-blue-400 mt-0.5 block">${totalProducts} Items</span>
+          </div>
+          <div class="bg-slate-50 dark:bg-slate-700/50 p-3 rounded-xl border border-slate-200 dark:border-slate-600">
+            <span class="text-[9px] font-bold text-slate-400 uppercase block">Categories</span>
+            <span class="text-base font-bold text-emerald-600 dark:text-emerald-400 mt-0.5 block">${totalCategories} Active</span>
+          </div>
+        </div>
+
+        <div class="bg-slate-50 dark:bg-slate-700/50 p-3 rounded-xl border border-slate-200 dark:border-slate-600 space-y-2">
+          <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase block border-b border-slate-200 dark:border-slate-600 pb-1">Unit Valuation Breakdown</span>
+          <div class="flex justify-between items-center">
+            <span class="text-slate-600 dark:text-slate-300">Sum of Cost Prices:</span>
+            <span class="font-bold text-slate-800 dark:text-slate-100">₹${totalCatalogCostVal.toFixed(2)}</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-slate-600 dark:text-slate-300">Sum of Sale Prices:</span>
+            <span class="font-bold text-emerald-600 dark:text-emerald-400">₹${totalCatalogSaleVal.toFixed(2)}</span>
+          </div>
+          <div class="flex justify-between items-center border-t border-slate-200 dark:border-slate-600 pt-1.5 font-bold">
+            <span class="text-slate-700 dark:text-slate-200">Potential Unit Margin:</span>
+            <span class="${estMargin >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-rose-600'}">₹${estMargin.toFixed(2)}</span>
+          </div>
+        </div>
+
+        <div class="bg-slate-50 dark:bg-slate-700/50 p-3 rounded-xl border border-slate-200 dark:border-slate-600 flex justify-between items-center">
+          <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">Purchase Ledger Logs</span>
+          <span class="font-bold text-slate-800 dark:text-slate-100">${totalLedgerLogs} Transactions</span>
+        </div>
+      `;
+    }
+
+    function renderDirectory() {
+      const tbody = document.getElementById('directoryTableBody');
+      const emptyState = document.getElementById('directoryEmptyState');
+      tbody.innerHTML = '';
+
+      const query = document.getElementById('searchQuery').value.toLowerCase().trim();
+      const selectedCat = document.getElementById('filterCategory').value;
+
+      const filtered = appState.items.filter(item => {
+        const matchesSearch = item.name.toLowerCase().includes(query) || (item.size && item.size.toLowerCase().includes(query));
+        const matchesCategory = (selectedCat === 'ALL' || item.category === selectedCat);
+        return matchesSearch && matchesCategory;
+      });
+
+      if (filtered.length === 0) {
+        emptyState.classList.remove('hidden');
+        return;
+      }
+      emptyState.classList.add('hidden');
+
+      filtered.sort((a,b) => a.name.localeCompare(b.name));
+
+      filtered.forEach(item => {
+        const catObj = appState.categories.find(c => c.name.toLowerCase() === item.category.toLowerCase()) || { color: '#64748b' };
+        
+        const nameLen = item.name.length;
+        let fontSizeClass = "text-[11px]";
+        if (nameLen > 35) {
+          fontSizeClass = "text-[8px]";
+        } else if (nameLen > 25) {
+          fontSizeClass = "text-[9px]";
+        } else if (nameLen > 18) {
+          fontSizeClass = "text-[10px]";
+        }
+
+        const itemPurchases = appState.purchaseRecords ? appState.purchaseRecords.filter(p => String(p.itemId) === String(item.id)) : [];
+        let lastPurchasedBadge = "";
+        if (itemPurchases.length > 0) {
+          const sortedPurchases = [...itemPurchases].sort((a, b) => new Date(b.date) - new Date(a.date));
+          const lastPurchasedDisplay = formatFriendlyDate(sortedPurchases[0].date);
+          lastPurchasedBadge = `<span class="text-[8px] font-bold bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300 px-1.5 py-[1px] rounded-full border border-slate-200 dark:border-slate-600 shrink-0" title="Last Purchased">${lastPurchasedDisplay}</span>`;
+        }
+
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-50/80 dark:hover:bg-slate-700/50 transition-colors overflow-visible relative"; 
+        
+        tr.innerHTML = `
+          <td class="py-2.5 px-3 text-left overflow-hidden border-r border-slate-100 dark:border-slate-700 max-w-0">
+            <button type="button" data-id="${escapeAttr(item.id)}" onclick="viewPurchaseHistory(this.dataset.id, event)" class="font-bold ${fontSizeClass} text-slate-800 dark:text-slate-100 hover:underline text-left block truncate w-full leading-tight" title="${escapeAttr(item.name)}">
+              ${escapeAttr(item.name)}
+            </button>
+            <div class="flex items-center gap-1 mt-1 whitespace-nowrap flex-nowrap overflow-hidden">
+              <span class="text-[8px] font-extrabold text-white uppercase tracking-wider px-2 py-[1px] rounded-full inline-block shadow-2xs shrink-0" style="background-color: ${catObj.color}">
+                ${escapeAttr(item.category)}
+              </span>
+              ${item.size ? `<span class="text-[8px] font-bold bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 px-1.5 py-[1px] rounded-full uppercase tracking-wider shrink-0 truncate max-w-[140px]">${escapeAttr(item.size)}</span>` : ''}
+              ${lastPurchasedBadge}
+            </div>
+          </td>
+          <td class="py-2.5 px-1 text-center font-bold text-[12px] text-slate-800 dark:text-slate-200 whitespace-nowrap border-r border-slate-100 dark:border-slate-700 truncate">
+            ₹${Number(item.cost).toFixed(2)}
+          </td>
+          <td class="py-2.5 px-1 text-center font-bold text-[12px] text-[#10b981] whitespace-nowrap border-r border-slate-100 dark:border-slate-700 truncate">
+            ₹${Number(item.sale).toFixed(2)}
+          </td>
+          <td class="py-2.5 !px-0 text-center relative overflow-visible">
+            <button type="button" data-id="${escapeAttr(item.id)}" onclick="toggleRowActionsMenu(this.dataset.id, event)" class="action-menu-btn w-6 h-6 inline-flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 bg-slate-50 dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 rounded active:scale-90 transition-all">
+              ⋮
+            </button>
+            
+            <div id="row-menu-${escapeAttr(item.id)}" class="action-dropdown-box hidden absolute right-2 top-8 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl rounded-lg py-1 w-28 z-50 text-slate-700 dark:text-slate-200 text-[11px]">
+              <button type="button" data-id="${escapeAttr(item.id)}" onclick="logStockForItem(this.dataset.id, event)" class="w-full text-left px-3 py-1.5 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center gap-1 font-semibold">
+                🟢 Log Stock
+              </button>
+              <button type="button" data-id="${escapeAttr(item.id)}" onclick="openEditItemModal(this.dataset.id, event)" class="w-full text-left px-3 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-1">
+                ✏️ Edit
+              </button>
+              <button type="button" data-id="${escapeAttr(item.id)}" onclick="deleteItemDirect(this.dataset.id, event)" class="w-full text-left px-3 py-1.5 hover:bg-rose-50 dark:hover:bg-rose-900/30 text-rose-600 dark:text-rose-400 flex items-center gap-1">
+                🗑️ Delete
+              </button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function toggleRowActionsMenu(itemId, event) {
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      
+      const targetMenu = document.getElementById(`row-menu-${itemId}`);
+      if (!targetMenu) return;
+      const isCurrentlyHidden = targetMenu.classList.contains('hidden');
+      
+      const allMenus = document.querySelectorAll('.action-dropdown-box');
+      allMenus.forEach(m => m.classList.add('hidden'));
+
+      if (isCurrentlyHidden) {
+        targetMenu.classList.remove('hidden');
+      }
+    }
+
+    function logStockForItem(itemId, event) {
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      closeAllDropdowns();
+
+      const item = appState.items.find(i => String(i.id) === String(itemId));
+      if (!item) return;
+
+      switchTab('ledger');
+
+      const container = document.getElementById('stockFormContainer');
+      if (container.classList.contains('hidden')) {
+        container.classList.remove('hidden');
+      }
+
+      selectPurchaseItem(item);
+      setPurchaseDateToToday();
+
+      setTimeout(() => {
+        const qtyInput = document.getElementById('purchaseQty');
+        if (qtyInput) {
+          qtyInput.value = 1;
+          calculatePurchaseTotal();
+          qtyInput.focus();
+          qtyInput.select();
+        }
+      }, 100);
+    }
+
+    function populateCategorySelectors() {
+      verifyCategoryColors();
+      renderCustomCategoryOptions();
+      renderCategoryTiles();
+    }
+
+    function renderCategoryTiles() {
+      const container = document.getElementById('categoryTilesContainer');
+      if (!container) return;
+
+      const currentSelected = document.getElementById('filterCategory') ? document.getElementById('filterCategory').value : 'ALL';
+      const allTiles = [{ name: 'ALL', color: '#3b82f6' }, ...appState.categories];
+
+      const row1 = [];
+      const row2 = [];
+
+      allTiles.forEach((cat, idx) => {
+        if (idx % 2 === 0) {
+          row1.push(cat);
+        } else {
+          row2.push(cat);
+        }
+      });
+
+      const createTileHtml = (cat) => {
+        const isAll = cat.name === 'ALL';
+        const isSelected = currentSelected === cat.name;
+        const displayName = isAll ? '📁 All' : cat.name;
+        
+        let tileClass = "px-2.5 py-1 rounded-xl text-[10px] font-bold transition-all whitespace-nowrap shrink-0 flex items-center gap-1.5 border cursor-pointer active:scale-95 shadow-2xs ";
+        
+        if (isSelected) {
+          tileClass += "bg-blue-600 text-white border-blue-600 shadow-xs ring-2 ring-blue-400/30 dark:ring-blue-500/40";
+        } else {
+          tileClass += "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600";
+        }
+
+        const colorDot = (!isAll) 
+          ? `<span class="w-2 h-2 rounded-full shrink-0" style="background-color: ${cat.color}"></span>`
+          : '';
+
+        return `<button type="button" onclick="selectCategoryFilter('${escapeAttr(cat.name)}')" class="${tileClass}">${colorDot}<span>${escapeAttr(displayName)}</span></button>`;
+      };
+
+      let html = `<div class="flex gap-1.5 overflow-x-auto no-scrollbar py-0.5 items-center">`;
+      row1.forEach(cat => { html += createTileHtml(cat); });
+      html += `</div>`;
+
+      html += `<div class="flex gap-1.5 overflow-x-auto no-scrollbar py-0.5 items-center">`;
+      row2.forEach(cat => { html += createTileHtml(cat); });
+      html += `</div>`;
+
+      container.innerHTML = html;
+    }
+
+    function renderCustomCategoryOptions() {
+      const container = document.getElementById('categoryOptionsContainer');
+      if (!container) return;
+      container.innerHTML = '';
+
+      const query = document.getElementById('categorySearchInput').value.toLowerCase().trim();
+
+      if (!query || 'all categories'.includes(query)) {
+        const allBtn = document.createElement('button');
+        allBtn.type = "button";
+        allBtn.className = "w-full text-left px-3 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg flex items-center gap-2 font-bold text-slate-700 dark:text-slate-200 transition-colors";
+        allBtn.innerHTML = `<span>📁</span> All Categories`;
+        allBtn.onclick = function() {
+          selectCategoryFilter('ALL');
+        };
+        container.appendChild(allBtn);
+      }
+
+      appState.categories.forEach(c => {
+        if (!query || c.name.toLowerCase().includes(query)) {
+          const catBtn = document.createElement('button');
+          catBtn.type = "button";
+          catBtn.className = "w-full text-left px-3 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg flex items-center justify-between transition-colors";
+          catBtn.innerHTML = `
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full" style="background-color: ${c.color}"></span>
+              <span class="text-slate-700 dark:text-slate-200 font-semibold">${escapeAttr(c.name)}</span>
+            </div>
+          `;
+          catBtn.onclick = function() {
+            selectCategoryFilter(c.name);
+          };
+          container.appendChild(catBtn);
+        }
+      });
+    }
+
+    function selectCategoryFilter(catName) {
+      const hiddenInput = document.getElementById('filterCategory');
+      const triggerLabel = document.getElementById('selectedCategoryLabel');
+      
+      hiddenInput.value = catName;
+      
+      if (catName === 'ALL') {
+        triggerLabel.innerHTML = `📁 All Categories`;
+      } else {
+        const catObj = appState.categories.find(c => c.name === catName);
+        const colorDot = catObj ? `<span class="inline-block w-2.5 h-2.5 rounded-full mr-2" style="background-color: ${catObj.color}"></span>` : '📂 ';
+        triggerLabel.innerHTML = `${colorDot}${escapeAttr(catName)}`;
+      }
+
+      document.getElementById('customCategoryDropdown').classList.add('hidden');
+      applyCategoryTilesVisibility();
+      filterItems();
+    }
+
+    function toggleCategorySearchDropdown(event) {
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      const dropdown = document.getElementById('customCategoryDropdown');
+      const wasHidden = dropdown.classList.contains('hidden');
+      
+      closeAllDropdowns();
+      
+      if (wasHidden) {
+        dropdown.classList.remove('hidden');
+        const searchInput = document.getElementById('categorySearchInput');
+        searchInput.value = '';
+        searchInput.focus();
+        renderCustomCategoryOptions();
+      }
+    }
+
+    function filterCategoryDropdown() {
+      renderCustomCategoryOptions();
+    }
+
+    function filterItems() {
+      renderDirectory();
+    }
+
+    function openAddItemModal(prefilledName = '') {
+      document.getElementById('itemModalTitle').innerText = "Add New Product";
+      document.getElementById('editItemId').value = "";
+      document.getElementById('itemForm').reset();
+      selectFormCategory('General');
+      resetInlineCategoryInput();
+
+      const nameToSet = prefilledName || document.getElementById('searchQuery').value.trim();
+      if (nameToSet) {
+        document.getElementById('itemName').value = nameToSet;
+      }
+
+      showModal('itemModal');
+    }
+
+    function openEditItemModal(itemId, event) {
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      
+      const item = appState.items.find(i => String(i.id) === String(itemId));
+      if (!item) return;
+
+      document.getElementById('itemModalTitle').innerText = "Modify Product";
+      document.getElementById('editItemId').value = item.id;
+      document.getElementById('itemName').value = item.name;
+      selectFormCategory(item.category || 'General');
+      document.getElementById('itemSize').value = item.size || "";
+      document.getElementById('itemCost').value = item.cost;
+      document.getElementById('itemSale').value = item.sale;
+      resetInlineCategoryInput();
+
+      showModal('itemModal');
+    }
+
+    function toggleFormCategoryPopover(event) {
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      const popover = document.getElementById('formCategoryPopover');
+      const wasHidden = popover.classList.contains('hidden');
+      if (wasHidden) {
+        popover.classList.remove('hidden');
+        document.getElementById('formCategorySearchInput').value = '';
+        renderFormCategoryPopoverOptions();
+      } else {
+        popover.classList.add('hidden');
+      }
+    }
+
+    function renderFormCategoryPopoverOptions() {
+      const container = document.getElementById('formCategoryOptionsList');
+      if (!container) return;
+      container.innerHTML = '';
+
+      const query = document.getElementById('formCategorySearchInput').value.toLowerCase().trim();
+
+      appState.categories.forEach(c => {
+        if (!query || c.name.toLowerCase().includes(query)) {
+          const btn = document.createElement('button');
+          btn.type = "button";
+          btn.className = "w-full text-left px-2 py-1 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg flex items-center justify-between transition-colors";
+          btn.innerHTML = `
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full" style="background-color: ${c.color}"></span>
+              <span class="text-slate-700 dark:text-slate-200 font-bold text-xs">${escapeAttr(c.name)}</span>
+            </div>
+          `;
+          btn.onclick = function() {
+            selectFormCategory(c.name);
+          };
+          container.appendChild(btn);
+        }
+      });
+    }
+
+    function filterFormCategoryPopover() {
+      renderFormCategoryPopoverOptions();
+    }
+
+    function selectFormCategory(catName) {
+      const catObj = appState.categories.find(c => c.name === catName) || { name: catName, color: '#3b82f6' };
+      document.getElementById('itemCategory').value = catObj.name;
+      document.getElementById('formCategoryLabel').innerHTML = `<span class="inline-block w-2.5 h-2.5 rounded-full mr-1.5" style="background-color: ${catObj.color}"></span> ${escapeAttr(catObj.name)}`;
+      document.getElementById('formCategoryPopover').classList.add('hidden');
+    }
+
+    function toggleInlineCategoryInput() {
+      const inputWrapper = document.getElementById('wrapper-input-category');
+      if (!inputWrapper) return;
+      inputWrapper.classList.toggle('hidden');
+      if (!inputWrapper.classList.contains('hidden')) {
+        const popover = document.getElementById('formCategoryPopover');
+        if (popover) popover.classList.add('hidden');
+        const input = document.getElementById('itemNewCategoryInput');
+        if (input) input.focus();
+      }
+    }
+
+    function resetInlineCategoryInput() {
+      const inputWrapper = document.getElementById('wrapper-input-category');
+      const input = document.getElementById('itemNewCategoryInput');
+      if (inputWrapper) inputWrapper.classList.add('hidden');
+      if (input) input.value = "";
+    }
+
+    function saveInlineCategory() {
+      const input = document.getElementById('itemNewCategoryInput');
+      const colorInput = document.getElementById('itemNewCategoryColor');
+      if (!input) return;
+      const label = input.value.trim();
+      const color = colorInput ? colorInput.value : '#3b82f6';
+
+      if (!label) return;
+
+      let existing = appState.categories.find(c => c.name.toLowerCase() === label.toLowerCase());
+      if (!existing) {
+        existing = { name: label, color: color };
+        appState.categories.push(existing);
+        saveState();
+      }
+      
+      populateCategorySelectors();
+      selectFormCategory(existing.name);
+      resetInlineCategoryInput();
+      showToast("Inline category created!", "success");
+    }
+
+    function saveItem(event) {
+      event.preventDefault();
+
+      const editId = document.getElementById('editItemId').value;
+      const name = document.getElementById('itemName').value.trim();
+      const category = document.getElementById('itemCategory').value;
+      const size = document.getElementById('itemSize').value.trim();
+      const cost = parsePrice(document.getElementById('itemCost').value);
+      const sale = parsePrice(document.getElementById('itemSale').value);
+
+      if (!name) return;
+
+      if (editId) {
+        const item = appState.items.find(i => String(i.id) === String(editId));
+        if (item) {
+          item.name = name;
+          item.category = category;
+          item.size = size;
+          item.cost = cost;
+          item.sale = sale;
+          item.updatedAt = new Date().toISOString();
+        }
+      } else {
+        const newId = appState.items.length > 0 ? Math.max(...appState.items.map(i => Number(i.id) || 0)) + 1 : 1;
+        appState.items.push({
+          id: newId,
+          name,
+          category,
+          size,
+          cost,
+          sale,
+          updatedAt: new Date().toISOString()
+        });
+      }
+
+      saveState();
+      populateCategorySelectors();
+      renderDirectory();
+      closeModal('itemModal');
+      showToast("Product saved successfully!", "success");
+    }
+
+    function deleteItemDirect(itemId, event) {
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+
+      const item = appState.items.find(i => String(i.id) === String(itemId));
+      if (!item) return;
+
+      customConfirm(`Are you sure you want to permanently delete "${item.name}" from your price directory?`, function() {
+        appState.items = appState.items.filter(i => String(i.id) !== String(itemId));
+        appState.purchaseRecords = appState.purchaseRecords.filter(p => String(p.itemId) !== String(itemId));
+        
+        saveState();
+        populateCategorySelectors();
+        renderDirectory();
+        showToast("Product deleted.", "info");
+      });
+    }
+
+    function openCategoryModal() {
+      closeAllDropdowns();
+      renderCategoryManagerList();
+      showModal('categoryModal');
+    }
+
+    function renderCategoryManagerList() {
+      const list = document.getElementById('categoryManagerList');
+      list.innerHTML = '';
+
+      appState.categories.forEach((cat, index) => {
+        const isDefault = cat.name.toLowerCase() === 'general';
+        const isEditing = cat._isEditing;
+        
+        const row = document.createElement('div');
+        row.className = "flex items-center justify-between py-1.5 px-1 text-xs gap-1";
+        
+        if (isEditing) {
+          row.innerHTML = `
+            <div class="flex items-center gap-1 flex-1 min-w-0">
+              <input type="color" value="${cat.color}" onchange="updateCategoryColor(this.dataset.cat, this.value)" data-cat="${escapeAttr(cat.name)}" class="w-5 h-5 p-0 border border-slate-200 rounded cursor-pointer bg-white shrink-0">
+              <input type="text" id="edit-cat-input-${index}" value="${escapeAttr(cat.name)}" class="w-full p-1 border border-blue-400 dark:border-blue-500 rounded text-xs font-semibold text-slate-800 dark:text-white dark:bg-slate-700 focus:outline-none">
+            </div>
+            <div class="flex items-center gap-1 shrink-0">
+              <button type="button" onclick="saveCategoryName(${index})" class="text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 p-1 font-bold text-xs" title="Save Category">✓</button>
+              <button type="button" onclick="cancelEditCategory(${index})" class="text-slate-400 hover:text-slate-600 p-1 text-xs" title="Cancel">✕</button>
+            </div>
+          `;
+        } else {
+          row.innerHTML = `
+            <div class="flex items-center gap-1.5 flex-1 min-w-0">
+              <input type="color" value="${cat.color}" onchange="updateCategoryColor(this.dataset.cat, this.value)" data-cat="${escapeAttr(cat.name)}" class="w-5 h-5 p-0 border border-slate-200 rounded cursor-pointer bg-white shrink-0">
+              <span class="font-medium text-slate-700 dark:text-slate-200 truncate">${escapeAttr(cat.name)}</span>
+            </div>
+            <div class="flex items-center gap-1 shrink-0">
+              ${!isDefault ? `
+                <button type="button" onclick="startEditCategory(${index})" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 p-1" title="Edit Category">✏️</button>
+                <button type="button" data-cat="${escapeAttr(cat.name)}" onclick="deleteCategoryDirect(this.dataset.cat)" class="text-rose-500 hover:text-rose-700 p-1" title="Delete Category">🗑️</button>
+              ` : '<span class="text-[9px] text-slate-400 font-semibold uppercase px-1">System</span>'}
+            </div>
+          `;
+        }
+        list.appendChild(row);
+      });
+    }
+
+    function startEditCategory(index) {
+      appState.categories.forEach((c, i) => c._isEditing = (i === index));
+      renderCategoryManagerList();
+      const input = document.getElementById(`edit-cat-input-${index}`);
+      if (input) {
+        input.focus();
+        input.select();
+      }
+    }
+
+    function cancelEditCategory(index) {
+      if (appState.categories[index]) {
+        delete appState.categories[index]._isEditing;
+      }
+      renderCategoryManagerList();
+    }
+
+    function saveCategoryName(index) {
+      const cat = appState.categories[index];
+      if (!cat) return;
+
+      const input = document.getElementById(`edit-cat-input-${index}`);
+      if (!input) return;
+
+      const newName = input.value.trim();
+      if (!newName) {
+        showToast("Category name cannot be empty.", "error");
+        return;
+      }
+
+      const oldName = cat.name;
+      delete cat._isEditing;
+
+      if (oldName.toLowerCase() === newName.toLowerCase()) {
+        cat.name = newName;
+        renderCategoryManagerList();
+        return;
+      }
+
+      cat.name = newName;
+
+      appState.items.forEach(item => {
+        if (item.category && item.category.toLowerCase() === oldName.toLowerCase()) {
+          item.category = newName;
+        }
+      });
+
+      saveState();
+      populateCategorySelectors();
+      renderCategoryManagerList();
+      renderDirectory();
+      renderLedger();
+      showToast(`Category updated to "${newName}"`, "success");
+    }
+
+    function addNewCategory() {
+      const input = document.getElementById('newCategoryInput');
+      const colorInput = document.getElementById('newCategoryColor');
+      const label = input.value.trim();
+      const color = colorInput.value;
+
+      if (!label) return;
+
+      const exists = appState.categories.some(c => c.name.toLowerCase() === label.toLowerCase());
+      if (exists) {
+        showToast("Category name already exists.", "error");
+        return;
+      }
+
+      appState.categories.push({ name: label, color: color });
+      input.value = '';
+      
+      saveState();
+      populateCategorySelectors();
+      renderCategoryManagerList();
+      renderDirectory();
+      showToast("Category registered!", "success");
+    }
+
+    function updateCategoryColor(catName, hexColor) {
+      const cat = appState.categories.find(c => c.name.toLowerCase() === catName.toLowerCase());
+      if (cat) {
+        cat.color = hexColor;
+        saveState();
+        renderDirectory();
+        renderCategoryManagerList();
+      }
+    }
+
+    function deleteCategoryDirect(catName) {
+      customConfirm(`Deleting "${catName}" will map any products inside it back to "General". Continue?`, function() {
+        appState.categories = appState.categories.filter(c => c.name.toLowerCase() !== catName.toLowerCase());
+        
+        appState.items.forEach(item => {
+          if (item.category.toLowerCase() === catName.toLowerCase()) {
+            item.category = 'General';
+          }
+        });
+
+        saveState();
+        populateCategorySelectors();
+        renderCategoryManagerList();
+        renderDirectory();
+        showToast("Category removed.", "info");
+      });
+    }
+
+    function toggleStockForm() {
+      const container = document.getElementById('stockFormContainer');
+      const isCurrentlyHidden = container.classList.contains('hidden');
+      
+      if (isCurrentlyHidden) {
+        container.classList.remove('hidden');
+        document.getElementById('purchaseItemSearch').value = "";
+        document.getElementById('purchaseItemId').value = "";
+        document.getElementById('purchaseForm').reset();
+        setPurchaseDateToToday();
+        document.getElementById('purchaseTotalDisplay').innerText = "₹0.00";
+      } else {
+        container.classList.add('hidden');
+      }
+    }
+
+    function showPurchaseDropdown() {
+      const dropdown = document.getElementById('customPurchaseDropdown');
+      dropdown.classList.remove('hidden');
+      filterPurchaseDropdown();
+    }
+
+    function filterPurchaseDropdown() {
+      const rawQuery = document.getElementById('purchaseItemSearch').value.trim();
+      const query = rawQuery.toLowerCase();
+      const dropdown = document.getElementById('customPurchaseDropdown');
+      dropdown.innerHTML = '';
+
+      const sortedItems = [...appState.items].sort((a,b) => a.name.localeCompare(b.name));
+      let matches = 0;
+
+      sortedItems.forEach(item => {
+        const sizeTag = item.size ? ` (${item.size})` : '';
+        const rawText = `${item.name}${sizeTag}`;
+        
+        if (!query || rawText.toLowerCase().includes(query) || item.category.toLowerCase().includes(query)) {
+          matches++;
+          const row = document.createElement('button');
+          row.type = "button";
+          row.className = "w-full text-left px-3 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-700 text-xs block border-b border-slate-50 dark:border-slate-700 transition-colors";
+          row.innerHTML = `
+            <div class="font-bold text-slate-800 dark:text-slate-100">${escapeAttr(item.name)}</div>
+            <div class="text-[10px] text-slate-400 flex justify-between mt-0.5">
+              <span>${item.size ? `${escapeAttr(item.size)}` : ''}</span>
+              <span class="font-bold text-slate-600 dark:text-slate-300">₹${Number(item.cost).toFixed(2)}</span>
+            </div>
+          `;
+          
+          row.onclick = function() {
+            selectPurchaseItem(item);
+          };
+          dropdown.appendChild(row);
+        }
+      });
+
+      if (rawQuery.length > 0) {
+        const addNewBtn = document.createElement('button');
+        addNewBtn.type = "button";
+        addNewBtn.className = "w-full text-left px-3 py-2 hover:bg-blue-50 dark:hover:bg-slate-700/80 text-blue-600 dark:text-blue-400 font-semibold text-xs border-t border-slate-100 dark:border-slate-700 flex items-center gap-1.5 transition-colors";
+        addNewBtn.innerHTML = `<span>➕</span> Add "${escapeAttr(rawQuery)}" as new product`;
+        addNewBtn.onclick = function() {
+          dropdown.classList.add('hidden');
+          openAddItemModal(rawQuery);
+        };
+        dropdown.appendChild(addNewBtn);
+      } else if (matches === 0) {
+        dropdown.innerHTML = `<div class="p-3 text-center text-slate-400 text-xs">No matching products found</div>`;
+      }
+    }
+
+    function selectPurchaseItem(item) {
+      const sizeTag = item.size ? ` (${item.size})` : '';
+      document.getElementById('purchaseItemSearch').value = `${item.name}${sizeTag}`;
+      document.getElementById('purchaseItemId').value = item.id;
+      document.getElementById('purchaseUnitCost').value = item.cost;
+      
+      calculatePurchaseTotal();
+      
+      const dropdown = document.getElementById('customPurchaseDropdown');
+      dropdown.classList.add('hidden');
+    }
+
+    function calculatePurchaseTotal() {
+      const qty = parseFloat(document.getElementById('purchaseQty').value) || 0;
+      const cost = parsePrice(document.getElementById('purchaseUnitCost').value);
+      const display = document.getElementById('purchaseTotalDisplay');
+      display.innerText = `₹${(qty * cost).toFixed(2)}`;
+    }
+
+    function savePurchaseEntry(e) {
+      e.preventDefault();
+
+      const itemId = document.getElementById('purchaseItemId').value;
+      const qty = parseFloat(document.getElementById('purchaseQty').value);
+      const unitCost = parsePrice(document.getElementById('purchaseUnitCost').value);
+      const date = document.getElementById('purchaseDate').value;
+
+      if (!itemId || !qty || !unitCost || !date) {
+        showToast("Please select a valid product from the list.", "error");
+        return;
+      }
+
+      const newRecord = {
+        id: Date.now() + Math.random(),
+        itemId,
+        qty,
+        unitCost,
+        date
+      };
+
+      appState.purchaseRecords.push(newRecord);
+      
+      const directoryProduct = appState.items.find(i => String(i.id) === String(itemId));
+      if (directoryProduct) {
+        directoryProduct.cost = unitCost;
+        directoryProduct.updatedAt = new Date().toISOString();
+      }
+
+      saveState();
+      renderLedger();
+      renderDirectory();
+      toggleStockForm();
+      showToast("Purchase log added successfully!", "success");
+    }
+
+    function setPurchaseDateToToday() {
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      const day = String(today.getDate()).padStart(2, '0');
+      document.getElementById('purchaseDate').value = `${year}-${month}-${day}`;
+    }
+
+    function renderLedger() {
+      const tbody = document.getElementById('ledgerTableBody');
+      const emptyState = document.getElementById('ledgerEmptyState');
+      const searchQuery = document.getElementById('ledgerSearch').value.toLowerCase().trim();
+      const dateFrom = document.getElementById('ledgerDateFrom') ? document.getElementById('ledgerDateFrom').value : '';
+      const dateTo = document.getElementById('ledgerDateTo') ? document.getElementById('ledgerDateTo').value : '';
+
+      tbody.innerHTML = '';
+
+      const enriched = appState.purchaseRecords.map(rec => {
+        const product = appState.items.find(i => String(i.id) === String(rec.itemId)) || { name: "Unknown Item", category: "General", size: "" };
+        return { ...rec, product };
+      });
+
+      const filtered = enriched.filter(rec => {
+        const matchesSearch = rec.product.name.toLowerCase().includes(searchQuery) || rec.product.category.toLowerCase().includes(searchQuery);
+        
+        let matchesDate = true;
+        if (dateFrom && rec.date < dateFrom) matchesDate = false;
+        if (dateTo && rec.date > dateTo) matchesDate = false;
+
+        return matchesSearch && matchesDate;
+      });
+
+      let sumInvestment = 0;
+      filtered.forEach(r => sumInvestment += (r.qty * r.unitCost));
+      document.getElementById('ledgerTotalCost').innerText = `₹${sumInvestment.toFixed(2)}`;
+      document.getElementById('ledgerTotalCount').innerText = `${filtered.length} Records`;
+
+      if (filtered.length === 0) {
+        emptyState.classList.remove('hidden');
+        return;
+      }
+      emptyState.classList.add('hidden');
+
+      filtered.sort((a,b) => new Date(b.date) - new Date(a.date));
+
+      filtered.forEach(rec => {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-xs overflow-visible relative";
+        
+        tr.innerHTML = `
+          <td class="py-2.5 px-3 text-left overflow-visible border-r border-slate-100 dark:border-slate-700">
+            <span class="font-bold text-slate-800 dark:text-slate-100 block text-[11px] leading-tight">${escapeAttr(rec.product.name)}</span>
+            <div class="flex items-center gap-1 mt-1 whitespace-nowrap flex-nowrap overflow-hidden">
+              <span class="text-[8px] bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold px-1.5 py-[1px] rounded-full border border-slate-200 dark:border-slate-600 shrink-0">Qty: ${rec.qty}</span>
+              ${rec.product.size ? `<span class="text-[8px] font-bold bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 px-1.5 py-[1px] rounded-full uppercase tracking-wider shrink-0 truncate max-w-[140px]">${escapeAttr(rec.product.size)}</span>` : ''}
+            </div>
+          </td>
+          <td class="py-2.5 px-2 text-center font-medium text-slate-500 dark:text-slate-400 text-[10px] whitespace-nowrap border-r border-slate-100 dark:border-slate-700">
+            ${formatFriendlyDate(rec.date)}
+          </td>
+          <td class="py-2.5 px-2 text-center font-bold text-slate-700 dark:text-slate-200 text-[10px] whitespace-nowrap border-r border-slate-100 dark:border-slate-700">
+            ₹${Number(rec.unitCost).toFixed(2)}
+          </td>
+          <td class="py-2.5 !px-0 text-center relative overflow-visible">
+            <button type="button" data-id="${escapeAttr(rec.id)}" onclick="toggleRowActionsMenu('ledger-' + this.dataset.id, event)" class="action-menu-btn w-6 h-6 inline-flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 bg-slate-50 dark:bg-slate-700 rounded">
+              ⋮
+            </button>
+            
+            <div id="row-menu-ledger-${escapeAttr(rec.id)}" class="action-dropdown-box hidden absolute right-2 top-8 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl rounded-lg py-1 w-24 z-50 text-slate-700 dark:text-slate-200 text-[11px]">
+              <button type="button" data-id="${escapeAttr(rec.id)}" onclick="deleteLedgerRecordDirect(this.dataset.id, event)" class="w-full text-left px-3 py-1.5 hover:bg-rose-50 dark:hover:bg-rose-900/30 text-rose-600 dark:text-rose-400 flex items-center gap-1">
+                🗑️ Delete
+              </button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function filterLedger() {
+      renderLedger();
+    }
+
+    function deleteLedgerRecordDirect(recId, event) {
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+
+      customConfirm(`Are you sure you want to permanently erase this purchase transaction entry?`, function() {
+        appState.purchaseRecords = appState.purchaseRecords.filter(r => String(r.id) !== String(recId));
+        saveState();
+        renderLedger();
+        showToast("Log entry deleted.", "info");
+      });
+    }
+
+    function confirmResetLedger() {
+      customConfirm(`🚨 CRITICAL ACTION: Are you sure you want to completely wipe the entire Purchase Ledger?`, function() {
+        appState.purchaseRecords = [];
+        saveState();
+        renderLedger();
+        showToast("Purchase history reset.", "info");
+      });
+    }
+
+    function openBulkAddModal() {
+      closeAllDropdowns();
+      const bulkSelector = document.getElementById('bulkCategorySelector');
+      bulkSelector.innerHTML = '<option value="">-- Quick Select Category --</option>';
+      appState.categories.forEach(c => {
+        bulkSelector.innerHTML += `<option value="${escapeAttr(c.name)}">${escapeAttr(c.name)}</option>`;
+      });
+
+      document.getElementById('bulkTextarea').value = "";
+      validateBulkInput();
+      showModal('bulkAddModal');
+    }
+
+    function injectCategoryToBulk() {
+      const selector = document.getElementById('bulkCategorySelector');
+      const catVal = selector.value;
+      const textarea = document.getElementById('bulkTextarea');
+      if (!catVal) return;
+
+      const cursorPosition = textarea.selectionStart;
+      const textVal = textarea.value;
+      const updatedText = textVal.substring(0, cursorPosition) + `, ${catVal}` + textVal.substring(textarea.selectionEnd);
+
+      textarea.value = updatedText;
+      textarea.focus();
+      selector.value = "";
+      validateBulkInput();
+    }
+
+    function validateBulkInput() {
+      const textarea = document.getElementById('bulkTextarea');
+      if (!textarea) return;
+      const text = textarea.value;
+      const lines = text.split('\n');
+      let validCount = 0;
+
+      lines.forEach(line => {
+        if (!line.trim()) return;
+        const parts = line.split(',');
+        if (parts[0] && parts[0].trim().length > 0) validCount++;
+      });
+
+      const badge = document.getElementById('bulkStatusBadge');
+      if (badge) {
+        badge.innerText = `${validCount} valid items detected`;
+      }
+    }
+
+    function saveBulkItems() {
+      const text = document.getElementById('bulkTextarea').value;
+      const lines = text.split('\n');
+      const newCategoriesDetected = new Set();
+
+      lines.forEach(line => {
+        if (!line.trim()) return;
+        const parts = line.split(',');
+        if (parts.length > 0 && parts[0].trim()) {
+          const cat = parts[4] ? parts[4].trim() : 'General';
+          if (cat) {
+            const exists = appState.categories.some(c => c.name.toLowerCase() === cat.toLowerCase());
+            if (!exists) {
+              newCategoriesDetected.add(cat);
+            }
+          }
+        }
+      });
+
+      const processImport = () => {
+        const defaultColors = ["#3b82f6", "#10b981", "#8b5cf6", "#f59e0b", "#ec4899", "#ef4444", "#14b8a6", "#eab308"];
+        newCategoriesDetected.forEach(catName => {
+          const exists = appState.categories.some(c => c.name.toLowerCase() === catName.toLowerCase());
+          if (!exists) {
+            const nextColor = defaultColors[appState.categories.length % defaultColors.length];
+            appState.categories.push({ name: catName, color: nextColor });
+          }
+        });
+
+        let addedCount = 0;
+        lines.forEach(line => {
+          if (!line.trim()) return;
+          const parts = line.split(',');
+          if (parts.length > 0 && parts[0].trim()) {
+            const name = parts[0].trim();
+            const size = parts[1] ? parts[1].trim() : '';
+            const cost = parts[2] ? parsePrice(parts[2].trim()) : 0;
+            const sale = parts[3] ? parsePrice(parts[3].trim()) : 0;
+            const category = parts[4] ? parts[4].trim() : 'General';
+
+            const newId = appState.items.length > 0 ? Math.max(...appState.items.map(i => Number(i.id) || 0)) + 1 : 1;
+            appState.items.push({
+              id: newId,
+              name,
+              category: category || 'General',
+              size,
+              cost,
+              sale,
+              updatedAt: new Date().toISOString()
+            });
+            addedCount++;
+          }
+        });
+
+        saveState();
+        verifyCategoryColors();
+        populateCategorySelectors();
+        renderDirectory();
+        closeModal('bulkAddModal');
+        showToast(`Bulk imported ${addedCount} products! ${newCategoriesDetected.size > 0 ? `(${newCategoriesDetected.size} new category created)` : ''}`, "success");
+      };
+
+      if (newCategoriesDetected.size > 0) {
+        const catListStr = Array.from(newCategoriesDetected).join(', ');
+        customConfirm(`New category(ies) detected: "${catListStr}". Do you want to automatically create them and import these products?`, processImport);
+      } else {
+        processImport();
+      }
+    }
+
+    function openBulkEditModal() {
+      closeAllDropdowns();
+      const catFilter = document.getElementById('bulkEditCategoryFilter');
+      catFilter.innerHTML = '<option value="ALL">All Categories</option>';
+      appState.categories.forEach(c => {
+        catFilter.innerHTML += `<option value="${escapeAttr(c.name)}">${escapeAttr(c.name)}</option>`;
+      });
+
+      document.getElementById('bulkEditSearch').value = '';
+      renderBulkEditList();
+      showModal('bulkEditModal');
+    }
+
+    function renderBulkEditList() {
+      const container = document.getElementById('bulkEditContainer');
+      const searchQuery = document.getElementById('bulkEditSearch').value.toLowerCase().trim();
+      const catFilter = document.getElementById('bulkEditCategoryFilter').value;
+
+      container.innerHTML = '';
+
+      const filtered = appState.items.filter(item => {
+        const matchesSearch = item.name.toLowerCase().includes(searchQuery) || (item.size && item.size.toLowerCase().includes(searchQuery));
+        const matchesCat = (catFilter === 'ALL' || item.category === catFilter);
+        return matchesSearch && matchesCat;
+      });
+
+      document.getElementById('bulkEditCountBadge').innerText = `${filtered.length} products listed`;
+
+      if (filtered.length === 0) {
+        container.innerHTML = '<div class="text-center text-slate-400 py-6">No matching products found.</div>';
+        return;
+      }
+
+      filtered.forEach(item => {
+        const div = document.createElement('div');
+        div.className = "p-2.5 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-200 dark:border-slate-600 space-y-2";
+        
+        const catObj = appState.categories.find(c => c.name.toLowerCase() === (item.category || '').toLowerCase()) || { name: item.category || 'General', color: '#64748b' };
+
+        div.innerHTML = `
+          <div>
+            <label class="block text-[9px] font-semibold text-slate-400 uppercase mb-0.5">Product Name</label>
+            <input type="text" data-id="${escapeAttr(item.id)}" field="name" value="${escapeAttr(item.name)}" class="w-full p-1.5 border border-slate-200 dark:border-slate-600 rounded bg-white dark:bg-slate-800 text-xs focus:outline-none font-bold">
+          </div>
+          <div class="grid grid-cols-2 gap-1.5">
+            <div class="relative">
+              <label class="block text-[9px] font-semibold text-slate-400 uppercase mb-0.5">Category</label>
+              <input type="hidden" data-id="${escapeAttr(item.id)}" field="category" value="${escapeAttr(item.category || 'General')}">
+              <button type="button" id="bulk-cat-trigger-${escapeAttr(item.id)}" onclick="toggleBulkEditCategoryPopover('${escapeAttr(item.id)}', event)" class="w-full text-left p-1.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 focus:outline-none flex justify-between items-center shadow-2xs">
+                <span id="bulk-cat-label-${escapeAttr(item.id)}" class="flex items-center gap-1.5 truncate">
+                  <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: ${catObj.color}"></span>
+                  <span class="truncate">${escapeAttr(item.category || 'General')}</span>
+                </span>
+                <span class="text-slate-400 text-[8px] ml-1 shrink-0">▼</span>
+              </button>
+
+              <div id="bulk-cat-popover-${escapeAttr(item.id)}" class="bulk-edit-cat-popover hidden absolute left-0 right-0 top-full mt-1 max-h-[420px] overflow-y-auto bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl z-[80] p-2 space-y-1 text-xs">
+                <input type="text" id="bulk-cat-search-${escapeAttr(item.id)}" oninput="filterBulkEditCategoryOptions('${escapeAttr(item.id)}')" placeholder="🔍 Search category..." class="w-full p-1.5 border border-slate-200 dark:border-slate-700 rounded-lg text-xs bg-slate-50 dark:bg-slate-700 dark:text-white focus:outline-none" autocomplete="off">
+                <div id="bulk-cat-options-${escapeAttr(item.id)}" class="max-h-[340px] overflow-y-auto space-y-0.5 pt-1 no-scrollbar"></div>
+              </div>
+            </div>
+            <div>
+              <label class="block text-[9px] font-semibold text-slate-400 uppercase mb-0.5">Size</label>
+              <input type="text" data-id="${escapeAttr(item.id)}" field="size" value="${escapeAttr(item.size || '')}" class="w-full p-1.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-xs focus:outline-none">
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-1.5">
+            <div>
+              <label class="block text-[9px] font-semibold text-slate-400 uppercase mb-0.5">Cost (₹)</label>
+              <input type="number" step="any" data-id="${escapeAttr(item.id)}" field="cost" value="${item.cost}" class="w-full p-1.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-xs focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-[9px] font-semibold text-slate-400 uppercase mb-0.5">Sale (₹)</label>
+              <input type="number" step="any" data-id="${escapeAttr(item.id)}" field="sale" value="${item.sale}" class="w-full p-1.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-xs focus:outline-none">
+            </div>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function toggleBulkEditCategoryPopover(itemId, event) {
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      const popover = document.getElementById(`bulk-cat-popover-${itemId}`);
+      if (!popover) return;
+      
+      const wasHidden = popover.classList.contains('hidden');
+      
+      document.querySelectorAll('.bulk-edit-cat-popover').forEach(p => p.classList.add('hidden'));
+
+      if (wasHidden) {
+        popover.classList.remove('hidden');
+        const searchInput = document.getElementById(`bulk-cat-search-${itemId}`);
+        if (searchInput) {
+          searchInput.value = '';
+          searchInput.focus();
+        }
+        renderBulkEditCategoryOptions(itemId);
+      }
+    }
+
+    function renderBulkEditCategoryOptions(itemId) {
+      const container = document.getElementById(`bulk-cat-options-${itemId}`);
+      const searchInput = document.getElementById(`bulk-cat-search-${itemId}`);
+      if (!container) return;
+      container.innerHTML = '';
+
+      const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+
+      appState.categories.forEach(c => {
+        if (!query || c.name.toLowerCase().includes(query)) {
+          const btn = document.createElement('button');
+          btn.type = "button";
+          btn.className = "w-full text-left px-2 py-1 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg flex items-center justify-between transition-colors";
+          btn.innerHTML = `
+            <div class="flex items-center gap-2 truncate">
+              <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: ${c.color}"></span>
+              <span class="text-slate-700 dark:text-slate-200 font-bold text-xs truncate">${escapeAttr(c.name)}</span>
+            </div>
+          `;
+          btn.onclick = function(e) {
+            if (e) e.stopPropagation();
+            selectBulkEditCategory(itemId, c.name);
+          };
+          container.appendChild(btn);
+        }
+      });
+    }
+
+    function filterBulkEditCategoryOptions(itemId) {
+      renderBulkEditCategoryOptions(itemId);
+    }
+
+    function selectBulkEditCategory(itemId, catName) {
+      const hiddenInput = document.querySelector(`input[data-id="${itemId}"][field="category"]`);
+      const labelSpan = document.getElementById(`bulk-cat-label-${itemId}`);
+      const popover = document.getElementById(`bulk-cat-popover-${itemId}`);
+
+      const catObj = appState.categories.find(c => c.name === catName) || { name: catName, color: '#64748b' };
+
+      if (hiddenInput) hiddenInput.value = catObj.name;
+      if (labelSpan) {
+        labelSpan.innerHTML = `
+          <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: ${catObj.color}"></span>
+          <span class="truncate">${escapeAttr(catObj.name)}</span>
+        `;
+      }
+      if (popover) popover.classList.add('hidden');
+    }
+
+    function saveBulkEditItems() {
+      const nameInputs = document.querySelectorAll('#bulkEditContainer input[field="name"]');
+      let editedCount = 0;
+
+      nameInputs.forEach(input => {
+        const id = input.getAttribute('data-id');
+        const item = appState.items.find(i => String(i.id) === String(id));
+        if (item) {
+          const newName = input.value.trim();
+          const catInput = document.querySelector(`#bulkEditContainer [data-id="${id}"][field="category"]`);
+          const sizeInput = document.querySelector(`#bulkEditContainer input[data-id="${id}"][field="size"]`);
+          const costInput = document.querySelector(`#bulkEditContainer input[data-id="${id}"][field="cost"]`);
+          const saleInput = document.querySelector(`#bulkEditContainer input[data-id="${id}"][field="sale"]`);
+
+          if (newName) item.name = newName;
+          if (catInput) item.category = catInput.value;
+          if (sizeInput) item.size = sizeInput.value.trim();
+          if (costInput) item.cost = parsePrice(costInput.value);
+          if (saleInput) item.sale = parsePrice(saleInput.value);
+          item.updatedAt = new Date().toISOString();
+          editedCount++;
+        }
+      });
+
+      saveState();
+      verifyCategoryColors();
+      populateCategorySelectors();
+      renderDirectory();
+      closeModal('bulkEditModal');
+      showToast(`Updated ${editedCount} products in bulk!`, "success");
+    }
+
+    function openImportModal() {
+      closeAllDropdowns();
+      resetCSVModal();
+      showModal('importModal');
+    }
+
+    function resetCSVModal() {
+      document.getElementById('csvStepUpload').classList.remove('hidden');
+      document.getElementById('csvStepMapping').classList.add('hidden');
+      document.getElementById('csvFeedback').classList.add('hidden');
+      const input = document.getElementById('csvFileInput');
+      if (input) input.value = "";
+      parsedCSVData = { headers: [], rows: [], rawRows: [] };
+    }
+
+    function parseCSVRows(text) {
+      if (!text || typeof text !== 'string') return [];
+      text = text.replace(/^\uFEFF/, ''); // Strip UTF-8 Byte Order Mark (BOM)
+
+      const sampleLines = text.split(/\r?\n/).filter(line => line.trim().length > 0);
+      if (sampleLines.length === 0) return [];
+
+      const sample = sampleLines.slice(0, 5).join('\n');
+      let delimiter = ',';
+      const commaCount = (sample.match(/,/g) || []).length;
+      const semiCount = (sample.match(/;/g) || []).length;
+      const tabCount = (sample.match(/\t/g) || []).length;
+      const pipeCount = (sample.match(/\|/g) || []).length;
+
+      if (semiCount > commaCount && semiCount >= tabCount) delimiter = ';';
+      else if (tabCount > commaCount && tabCount > semiCount) delimiter = '\t';
+      else if (pipeCount > commaCount && pipeCount > semiCount) delimiter = '|';
+
+      const rows = [];
+      let currentRow = [];
+      let currentField = '';
+      let inQuotes = false;
+
+      for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        const nextChar = text[i + 1];
+
+        if (char === '"') {
+          if (inQuotes && nextChar === '"') {
+            currentField += '"';
+            i++;
+          } else {
+            inQuotes = !inQuotes;
+          }
+        } else if (char === delimiter && !inQuotes) {
+          currentRow.push(currentField.trim());
+          currentField = '';
+        } else if ((char === '\r' || char === '\n') && !inQuotes) {
+          if (char === '\r' && nextChar === '\n') i++;
+          currentRow.push(currentField.trim());
+          if (currentRow.some(field => field.length > 0)) {
+            rows.push(currentRow);
+          }
+          currentRow = [];
+          currentField = '';
+        } else {
+          currentField += char;
+        }
+      }
+
+      if (currentField.length > 0 || currentRow.length > 0) {
+        currentRow.push(currentField.trim());
+        if (currentRow.some(field => field.length > 0)) {
+          rows.push(currentRow);
+        }
+      }
+
+      return rows;
+    }
+
+    function handleCSVSelect(event) {
+      const file = event.target.files ? event.target.files[0] : null;
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const text = e.target.result;
+          const allRows = parseCSVRows(text);
+          if (allRows.length < 1) {
+            showToast("CSV file is empty or unreadable.", "error");
+            return;
+          }
+
+          parsedCSVData.rawRows = allRows;
+          const toggle = document.getElementById('csvHasHeaderToggle');
+          if (toggle) toggle.checked = true;
+
+          updateCSVMappingStep();
+
+          document.getElementById('csvStepUpload').classList.add('hidden');
+          document.getElementById('csvStepMapping').classList.remove('hidden');
+        } catch (err) {
+          console.error(err);
+          showToast("Error reading CSV file: " + err.message, "error");
+        } finally {
+          if (event.target) event.target.value = '';
+        }
+      };
+      reader.readAsText(file, 'UTF-8');
+    }
+
+    function toggleCSVHeaderOption() {
+      updateCSVMappingStep();
+    }
+
+    function updateCSVMappingStep() {
+      if (!parsedCSVData.rawRows || parsedCSVData.rawRows.length === 0) return;
+
+      const toggle = document.getElementById('csvHasHeaderToggle');
+      const hasHeader = toggle ? toggle.checked : true;
+
+      if (hasHeader && parsedCSVData.rawRows.length > 1) {
+        parsedCSVData.headers = parsedCSVData.rawRows[0].map(h => h.replace(/^["']|["']$/g, '').trim());
+        parsedCSVData.rows = parsedCSVData.rawRows.slice(1);
+      } else {
+        const colCount = parsedCSVData.rawRows[0].length;
+        parsedCSVData.headers = Array.from({ length: colCount }, (_, i) => `Column ${i + 1}`);
+        parsedCSVData.rows = parsedCSVData.rawRows;
+      }
+
+      document.getElementById('csvFileMeta').innerText = `${parsedCSVData.rows.length} row(s) detected • ${parsedCSVData.headers.length} column(s)`;
+      populateColumnDropdowns(parsedCSVData.headers);
+    }
+
+    function populateColumnDropdowns(headers) {
+      const dropdowns = [
+        { id: 'mapColName', keywords: ['name', 'product', 'item', 'title', 'description', 'particular'] },
+        { id: 'mapColCategory', keywords: ['category', 'cat', 'group', 'type', 'department', 'brand'] },
+        { id: 'mapColSize', keywords: ['size', 'pack', 'variant', 'unit', 'weight', 'pkg', 'qty'] },
+        { id: 'mapColCost', keywords: ['cost', 'buy', 'purchase', 'cp', 'rate', 'buying'] },
+        { id: 'mapColSale', keywords: ['sale', 'sell', 'mrp', 'price', 'sp', 'retail', 'selling'] }
+      ];
+
+      dropdowns.forEach(dd => {
+        const el = document.getElementById(dd.id);
+        if (!el) return;
+        el.innerHTML = '<option value="-1">-- Ignore / Do Not Import --</option>';
+
+        let autoMatchIdx = -1;
+
+        headers.forEach((h, idx) => {
+          const opt = document.createElement('option');
+          opt.value = idx;
+          opt.innerText = `Col ${idx + 1}: ${h || 'Untitled Column'}`;
+          el.appendChild(opt);
+
+          const cleanHeader = h.toLowerCase().replace(/[^a-z0-9]/g, '');
+          if (dd.keywords.some(kw => cleanHeader.includes(kw)) && autoMatchIdx === -1) {
+            autoMatchIdx = idx;
+          }
+        });
+
+        if (dd.id === 'mapColName' && autoMatchIdx === -1 && headers.length > 0) {
+          autoMatchIdx = 0;
+        }
+
+        if (autoMatchIdx !== -1) {
+          el.value = autoMatchIdx;
+        }
+      });
+    }
+
+    function executeMappedCSVImport() {
+      const nameIdx = parseInt(document.getElementById('mapColName').value);
+      const catIdx = parseInt(document.getElementById('mapColCategory').value);
+      const sizeIdx = parseInt(document.getElementById('mapColSize').value);
+      const costIdx = parseInt(document.getElementById('mapColCost').value);
+      const saleIdx = parseInt(document.getElementById('mapColSale').value);
+
+      if (nameIdx === -1 || isNaN(nameIdx)) {
+        showToast("Please select a CSV column for Product Name.", "error");
+        return;
+      }
+
+      let updatedCount = 0;
+      let addedCount = 0;
+
+      parsedCSVData.rows.forEach(row => {
+        const rawName = row[nameIdx] ? cleanThermalText(row[nameIdx].replace(/^["']|["']$/g, '')) : "";
+        if (!rawName) return;
+
+        const category = (catIdx !== -1 && row[catIdx]) ? cleanThermalText(row[catIdx].replace(/^["']|["']$/g, '')) : "General";
+        const size = (sizeIdx !== -1 && row[sizeIdx]) ? cleanThermalText(row[sizeIdx].replace(/^["']|["']$/g, '')) : "";
+        
+        let cost = (costIdx !== -1 && row[costIdx] !== undefined) ? parsePrice(row[costIdx]) : 0;
+        let sale = (saleIdx !== -1 && row[saleIdx] !== undefined) ? parsePrice(row[saleIdx]) : 0;
+
+        if (costIdx !== -1 && saleIdx === -1) sale = cost;
+        if (saleIdx !== -1 && costIdx === -1) cost = sale;
+
+        const existing = appState.items.find(i => i.name.toLowerCase() === rawName.toLowerCase());
+
+        if (existing) {
+          if (costIdx !== -1) existing.cost = cost;
+          if (saleIdx !== -1) existing.sale = sale;
+          if (catIdx !== -1 && category) existing.category = category;
+          if (sizeIdx !== -1) existing.size = size;
+          existing.updatedAt = new Date().toISOString();
+          updatedCount++;
+        } else {
+          const newId = appState.items.length > 0 ? Math.max(...appState.items.map(i => Number(i.id) || 0)) + 1 : 1;
+          appState.items.push({
+            id: newId,
+            name: rawName,
+            category: category || "General",
+            size,
+            cost,
+            sale,
+            updatedAt: new Date().toISOString()
+          });
+          addedCount++;
+        }
+      });
+
+      saveState();
+      verifyCategoryColors();
+      populateCategorySelectors();
+      renderDirectory();
+
+      const feedback = document.getElementById('csvFeedback');
+      feedback.innerHTML = `✅ <strong>Import Complete!</strong><br>Added ${addedCount} new products, updated ${updatedCount} existing products.`;
+      feedback.classList.remove('hidden');
+      showToast(`CSV Imported (${addedCount} added, ${updatedCount} updated)`, "success");
+
+      setTimeout(() => {
+        closeModal('importModal');
+      }, 1200);
+    }
+
+    function openExportModal() {
+      closeAllDropdowns();
+      showModal('exportModal');
+    }
+
+    function exportJSONBackupDirect() {
+      closeAllDropdowns();
+      const cleanItems = appState.items.map(item => ({
+        ...item,
+        name: cleanThermalText(item.name),
+        category: cleanThermalText(item.category),
+        size: cleanThermalText(item.size)
+      }));
+
+      const backupData = {
+        appVersion: "9.1",
+        exportedAt: new Date().toISOString(),
+        items: cleanItems,
+        categories: appState.categories,
+        purchaseRecords: appState.purchaseRecords,
+        backups: appState.backups || []
+      };
+
+      const jsonStr = JSON.stringify(backupData, null, 2);
+      const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const filename = `ArunTraders_Backup_v9.1_${new Date().toISOString().split('T')[0]}.json`;
+
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+      showToast("JSON Backup exported successfully!", "success");
+    }
+
+    function exportCSVData(type) {
+      let csvLines = [];
+      let filename = `ArunTraders_${type}_v9.1_${new Date().toISOString().split('T')[0]}.csv`;
+
+      const clean = (val) => {
+        if (val === null || val === undefined) return '""';
+        const str = cleanThermalText(String(val)).replace(/"/g, '""');
+        return `"${str}"`;
+      };
+
+      if (type === 'directory') {
+        csvLines.push("Item Name,Category,Size,Cost Price,Sale Price,Last Updated");
+        appState.items.forEach(item => {
+          csvLines.push(`${clean(item.name)},${clean(item.category)},${clean(item.size)},${Number(item.cost || 0).toFixed(2)},${Number(item.sale || 0).toFixed(2)},${clean(item.updatedAt || '')}`);
+        });
+      } else if (type === 'ledger') {
+        csvLines.push("Transaction ID,Item Name,Category,Date,Quantity,Unit Cost,Total Cost");
+        appState.purchaseRecords.forEach(rec => {
+          const prod = appState.items.find(i => String(i.id) === String(rec.itemId)) || { name: "Unknown Item", category: "General" };
+          const total = (rec.qty || 0) * (rec.unitCost || 0);
+          csvLines.push(`${clean(rec.id)},${clean(prod.name)},${clean(prod.category)},${clean(rec.date)},${rec.qty || 0},${Number(rec.unitCost || 0).toFixed(2)},${Number(total).toFixed(2)}`);
+        });
+      }
+
+      const csvString = "\ufeff" + csvLines.join("\n");
+      const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+      showToast("Spreadsheet downloaded.", "success");
+    }
+
+    function openBackupModal() {
+      closeAllDropdowns();
+      renderLocalBackupsList();
+      showModal('backupModal');
+    }
+
+    function renderLocalBackupsList() {
+      const container = document.getElementById('localBackupList');
+      if (!container) return;
+      container.innerHTML = '';
+
+      if (!appState.backups || appState.backups.length === 0) {
+        container.innerHTML = '<div class="p-3 text-center text-slate-400">No local snapshots saved yet.</div>';
+        return;
+      }
+
+      appState.backups.forEach((b, index) => {
+        const div = document.createElement('div');
+        div.className = "flex items-center justify-between p-2 hover:bg-slate-100 dark:hover:bg-slate-700/60 transition-colors text-xs";
+        div.innerHTML = `
+          <div>
+            <strong class="text-slate-800 dark:text-slate-100 block text-[11px]">${escapeAttr(b.name)}</strong>
+            <span class="text-[9px] text-slate-400">${formatFriendlyDate(b.timestamp)} \u2022 ${b.itemsCount || 0} Items</span>
+          </div>
+          <div class="flex items-center gap-1">
+            <button type="button" onclick="restoreLocalBackup(${index})" class="px-2 py-1 bg-blue-600 text-white rounded text-[10px] font-bold hover:bg-blue-700">Restore</button>
+            <button type="button" onclick="deleteLocalBackup(${index})" class="px-1.5 py-1 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded text-xs" title="Delete Snapshot">&times;</button>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function createNewBackupSnapshot() {
+      const nameInput = document.getElementById('backupNameInput');
+      const name = nameInput.value.trim() || `Snapshot ${new Date().toLocaleDateString()}`;
+
+      if (!appState.backups) appState.backups = [];
+
+      const snapshot = {
+        id: Date.now(),
+        name: name,
+        timestamp: new Date().toISOString(),
+        itemsCount: appState.items.length,
+        data: {
+          items: JSON.parse(JSON.stringify(appState.items)),
+          categories: JSON.parse(JSON.stringify(appState.categories)),
+          purchaseRecords: JSON.parse(JSON.stringify(appState.purchaseRecords))
+        }
+      };
+
+      appState.backups.unshift(snapshot);
+      saveState();
+      nameInput.value = '';
+      renderLocalBackupsList();
+      showToast("Local snapshot created!", "success");
+    }
+
+    function restoreLocalBackup(index) {
+      const snapshot = appState.backups[index];
+      if (!snapshot) return;
+
+      customConfirm(`Restore state to "${snapshot.name}"? Current changes will be overwritten.`, function() {
+        if (snapshot.data) {
+          if (snapshot.data.items) appState.items = snapshot.data.items;
+          if (snapshot.data.categories) appState.categories = snapshot.data.categories;
+          if (snapshot.data.purchaseRecords) appState.purchaseRecords = snapshot.data.purchaseRecords;
+          saveState();
+          populateCategorySelectors();
+          renderDirectory();
+          renderLedger();
+          closeModal('backupModal');
+          showToast("Snapshot restored successfully!", "success");
+        }
+      });
+    }
+
+    function deleteLocalBackup(index) {
+      appState.backups.splice(index, 1);
+      saveState();
+      renderLocalBackupsList();
+      showToast("Snapshot deleted.", "info");
+    }
+
+    function normalizeJsonItem(rawItem, idx) {
+      if (!rawItem || typeof rawItem !== 'object') return null;
+      const rawName = rawItem.name || rawItem.itemName || rawItem.productName || rawItem["Item Name"] || rawItem["Product Name"] || rawItem.title || rawItem.item || "";
+      if (!rawName || !String(rawName).trim()) return null;
+
+      const category = rawItem.category || rawItem.Category || rawItem.cat || rawItem.group || "General";
+      const size = rawItem.size || rawItem.Size || rawItem.package || rawItem.pack || rawItem.variant || "";
+      
+      const rawCost = rawItem.cost !== undefined ? rawItem.cost : (rawItem.costPrice !== undefined ? rawItem.costPrice : (rawItem["Cost Price"] !== undefined ? rawItem["Cost Price"] : (rawItem.buyPrice !== undefined ? rawItem.buyPrice : rawItem.price)));
+      const rawSale = rawItem.sale !== undefined ? rawItem.sale : (rawItem.salePrice !== undefined ? rawItem.salePrice : (rawItem["Sale Price"] !== undefined ? rawItem["Sale Price"] : (rawItem.sellPrice !== undefined ? rawItem.sellPrice : rawItem.price)));
+
+      return {
+        id: rawItem.id || (Date.now() + idx),
+        name: cleanThermalText(rawName),
+        category: cleanThermalText(category) || "General",
+        size: cleanThermalText(size),
+        cost: parsePrice(rawCost),
+        sale: parsePrice(rawSale),
+        updatedAt: rawItem.updatedAt || new Date().toISOString()
+      };
+    }
+
+    function importJSONBackupFile(event) {
+      const file = event.target.files ? event.target.files[0] : null;
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const content = e.target.result.replace(/^\uFEFF/, '').trim();
+          const parsed = JSON.parse(content);
+          
+          let itemsToImport = [];
+          let categoriesToImport = null;
+          let recordsToImport = null;
+          let backupsToImport = null;
+
+          if (Array.isArray(parsed)) {
+            itemsToImport = parsed;
+          } else if (typeof parsed === 'object' && parsed !== null) {
+            if (Array.isArray(parsed.items)) itemsToImport = parsed.items;
+            else if (Array.isArray(parsed.products)) itemsToImport = parsed.products;
+            else if (Array.isArray(parsed.data)) itemsToImport = parsed.data;
+            else if (Array.isArray(parsed.catalog)) itemsToImport = parsed.catalog;
+            else if (parsed.name || parsed.itemName || parsed.productName || parsed["Item Name"]) {
+              itemsToImport = [parsed];
+            } else {
+              const possibleItems = [];
+              Object.keys(parsed).forEach(key => {
+                const val = parsed[key];
+                if (val && typeof val === 'object') {
+                  if (!val.name && !val.itemName && !val.productName) {
+                    val.name = key;
+                  }
+                  possibleItems.push(val);
+                }
+              });
+              if (possibleItems.length > 0) itemsToImport = possibleItems;
+            }
+
+            if (Array.isArray(parsed.categories)) categoriesToImport = parsed.categories;
+            if (Array.isArray(parsed.purchaseRecords)) recordsToImport = parsed.purchaseRecords;
+            if (Array.isArray(parsed.backups)) backupsToImport = parsed.backups;
+          }
+
+          const normalizedItems = itemsToImport.map((raw, idx) => normalizeJsonItem(raw, idx)).filter(Boolean);
+
+          if (normalizedItems.length > 0 || (recordsToImport && recordsToImport.length > 0)) {
+            if (normalizedItems.length > 0) {
+              appState.items = normalizedItems;
+            }
+
+            if (categoriesToImport && Array.isArray(categoriesToImport)) {
+              appState.categories = categoriesToImport;
+            }
+            if (recordsToImport && Array.isArray(recordsToImport)) {
+              appState.purchaseRecords = recordsToImport;
+            }
+            if (backupsToImport && Array.isArray(backupsToImport)) {
+              appState.backups = backupsToImport;
+            }
+
+            verifyCategoryColors();
+            saveState();
+            populateCategorySelectors();
+            renderDirectory();
+            renderLedger();
+            closeModal('backupModal');
+            showToast(`JSON Data imported (${appState.items.length} products loaded)!`, "success");
+          } else {
+            showToast("Invalid JSON file: No valid items found.", "error");
+          }
+        } catch (err) {
+          console.error(err);
+          showToast("Error parsing JSON file: " + err.message, "error");
+        } finally {
+          if (event.target) event.target.value = '';
+        }
+      };
+      reader.readAsText(file, 'UTF-8');
+    }
+
+    let btDevice = null;
+    let btCharacteristic = null;
+
+    async function connectBluetoothPrinter() {
+      if (!navigator.bluetooth) {
+        showToast("Web Bluetooth is not supported in this browser. Please use Chrome on Android/Desktop.", "error");
+        return false;
+      }
+      try {
+        showToast("Searching for Bluetooth printers...", "info");
+        btDevice = await navigator.bluetooth.requestDevice({
+          acceptAllDevices: true,
+          optionalServices: [
+            '00001101-0000-1000-8000-00805f9b34fb',
+            '000018f0-0000-1000-8000-00805f9b34fb',
+            '49535343-fe7d-4ae5-8fa9-9fafd205e455',
+            'e7810a71-73ae-499d-8c15-faa9aef0c3f2'
+          ]
+        });
+
+        const server = await btDevice.gatt.connect();
+        const services = await server.getPrimaryServices();
+        
+        for (const service of services) {
+          const characteristics = await service.getCharacteristics();
+          for (const char of characteristics) {
+            if (char.properties.write || char.properties.writeWithoutResponse) {
+              btCharacteristic = char;
+              break;
+            }
+          }
+          if (btCharacteristic) break;
+        }
+
+        if (btCharacteristic) {
+          showToast(`Connected to ${btDevice.name || 'Printer'}!`, "success");
+          updateBluetoothUI(true);
+          return true;
+        } else {
+          showToast("Connected, but no writeable printer channel found.", "error");
+          return false;
+        }
+      } catch (err) {
+        if (err.name !== 'NotFoundError') {
+          showToast("Bluetooth Connection Error: " + err.message, "error");
+        }
+        return false;
+      }
+    }
+
+    function updateBluetoothUI(isConnected) {
+      const badge = document.getElementById('btStatusBadge');
+      if (badge) {
+        if (isConnected && btDevice) {
+          badge.innerText = `Connected (${btDevice.name || 'Printer'})`;
+          badge.className = "text-[9px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 dark:text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800";
+        } else {
+          badge.innerText = "Disconnected";
+          badge.className = "text-[9px] font-bold text-slate-500 bg-slate-100 dark:bg-slate-700 dark:text-slate-400 px-2 py-0.5 rounded-full";
+        }
+      }
+    }
+
+    function formatThermalLine(itemStr, costStr, saleStr, showName, showCost, showSale, lineLen = 48) {
+      itemStr = cleanThermalText(itemStr);
+      costStr = cleanThermalText(costStr);
+      saleStr = cleanThermalText(saleStr);
+
+      if (showName && showCost && showSale) {
+        const costW = 8;
+        const saleW = 8;
+        const itemW = lineLen - costW - saleW;
+        return padRight(itemStr, itemW) + padLeft(costStr, costW) + padLeft(saleStr, saleW);
+      } else if (showName && showSale) {
+        const saleW = 10;
+        const itemW = lineLen - saleW;
+        return padRight(itemStr, itemW) + padLeft(saleStr, saleW);
+      } else if (showName && showCost) {
+        const costW = 10;
+        const itemW = lineLen - costW;
+        return padRight(itemStr, itemW) + padLeft(costStr, costW);
+      } else {
+        return padRight(itemStr, lineLen);
+      }
+    }
+
+    async function triggerBluetoothPrint() {
+      if (!btCharacteristic || !btDevice || !btDevice.gatt.connected) {
+        const connected = await connectBluetoothPrinter();
+        if (!connected) return;
+      }
+
+      try {
+        showToast("Sending receipt to Bluetooth printer...", "info");
+        const encoder = new TextEncoder();
+        
+        const selectedCat = document.getElementById('printCategorySelect').value;
+        const showName = document.getElementById('chkPrintName') ? document.getElementById('chkPrintName').checked : true;
+        const showSize = document.getElementById('chkPrintSize') ? document.getElementById('chkPrintSize').checked : true;
+        const showCost = document.getElementById('chkPrintCost') ? document.getElementById('chkPrintCost').checked : true;
+        const showSale = document.getElementById('chkPrintSale') ? document.getElementById('chkPrintSale').checked : true;
+
+        const filtered = appState.items.filter(i => selectedCat === 'ALL' || i.category === selectedCat);
+        filtered.sort((a,b) => a.name.localeCompare(b.name));
+
+        const now = new Date();
+        const dateStr = formatReceiptDateTime(now);
+
+        let commands = [];
+        const pushBytes = (...b) => commands.push(...b);
+        const pushStr = (str) => {
+          const bytes = encoder.encode(str);
+          for (let b of bytes) commands.push(b);
+        };
+
+        pushBytes(0x1B, 0x40);
+        pushBytes(0x1B, 0x61, 0x01);
+        pushBytes(0x1D, 0x21, 0x11);
+        pushStr("ARUN TRADERS\n");
+        pushBytes(0x1D, 0x21, 0x00);
+        pushStr("PRICE DIRECTORY & CATALOG\n");
+        pushStr("------------------------------------------------\n");
+        pushStr(`DATE: ${dateStr}\n`);
+        pushStr(`CAT: ${cleanThermalText(selectedCat === 'ALL' ? 'ALL' : selectedCat).toUpperCase()} (${filtered.length} ITEMS)\n`);
+        pushStr("------------------------------------------------\n");
+
+        pushBytes(0x1B, 0x61, 0x00);
+
+        let colHeader = formatThermalLine("ITEM", "COST", "SALE", showName, showCost, showSale, 48);
+
+        pushStr(`${colHeader}\n`);
+        pushStr("================================================\n");
+
+        filtered.forEach(item => {
+          let nameStr = cleanThermalText(item.name || '');
+          if (showSize && item.size) {
+            nameStr += ` (${cleanThermalText(item.size)})`;
+          }
+
+          let costVal = Number(item.cost || 0).toFixed(2);
+          let saleVal = Number(item.sale || 0).toFixed(2);
+
+          let line = formatThermalLine(nameStr, costVal, saleVal, showName, showCost, showSale, 48);
+
+          pushStr(`${line}\n`);
+          pushStr("------------------------------------------------\n");
+        });
+
+        pushBytes(0x1B, 0x61, 0x01);
+        pushStr("*** END OF LIST ***\n\n\n\n");
+        pushBytes(0x1D, 0x56, 0x41, 0x03);
+
+        const uint8Data = new Uint8Array(commands);
+        const chunkSize = 512;
+        for (let i = 0; i < uint8Data.length; i += chunkSize) {
+          const chunk = uint8Data.slice(i, i + chunkSize);
+          if (btCharacteristic.properties.writeWithoutResponse) {
+            await btCharacteristic.writeValueWithoutResponse(chunk);
+          } else {
+            await btCharacteristic.writeValueWithResponse(chunk);
+          }
+        }
+
+        showToast("Receipt printed via Bluetooth!", "success");
+      } catch (err) {
+        showToast("Bluetooth Print Failed: " + err.message, "error");
+      }
+    }
+
+    function formatReceiptDateTime(date) {
+      const d = new Date(date);
+      const day = String(d.getDate()).padStart(2, '0');
+      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const monthStr = months[d.getMonth()];
+      const year = d.getFullYear();
+      let hours = d.getHours();
+      const minutes = String(d.getMinutes()).padStart(2, '0');
+      const ampm = hours >= 12 ? 'pm' : 'am';
+      hours = hours % 12;
+      hours = hours ? hours : 12;
+      const hrStr = String(hours).padStart(2, '0');
+      return `${day} ${monthStr} ${year} ${hrStr}:${minutes} ${ampm}`;
+    }
+
+    function padRight(str, length) {
+      str = String(str || '');
+      if (str.length > length) return str.substring(0, length);
+      return str + ' '.repeat(length - str.length);
+    }
+
+    function padLeft(str, length) {
+      str = String(str || '');
+      if (str.length > length) return str.substring(0, length);
+      return ' '.repeat(length - str.length) + str;
+    }
+
+    function renderPrintPreview() {
+      const selectedCatSelect = document.getElementById('printCategorySelect');
+      const selectedCat = selectedCatSelect ? selectedCatSelect.value : 'ALL';
+      const previewBox = document.getElementById('thermalPreviewBox');
+      const printArea = document.getElementById('thermalPrintArea');
+      const badge = document.getElementById('printItemCountBadge');
+
+      const showName = document.getElementById('chkPrintName') ? document.getElementById('chkPrintName').checked : true;
+      const showSize = document.getElementById('chkPrintSize') ? document.getElementById('chkPrintSize').checked : true;
+      const showCost = document.getElementById('chkPrintCost') ? document.getElementById('chkPrintCost').checked : true;
+      const showSale = document.getElementById('chkPrintSale') ? document.getElementById('chkPrintSale').checked : true;
+
+      const filtered = appState.items.filter(item => {
+        return selectedCat === 'ALL' || item.category === selectedCat;
+      });
+
+      filtered.sort((a,b) => a.name.localeCompare(b.name));
+
+      if (badge) badge.innerText = `${filtered.length} Items`;
+
+      const now = new Date();
+      const dateStr = formatReceiptDateTime(now);
+      const catLabel = selectedCat === 'ALL' ? 'ALL' : cleanThermalText(selectedCat).toUpperCase();
+
+      let thHtml = '';
+      if (showName) thHtml += `<th style="text-align: left; padding-bottom: 4px; font-weight: bold;">ITEM</th>`;
+      if (showCost) thHtml += `<th style="text-align: right; padding-bottom: 4px; font-weight: bold; width: 18%;">COST</th>`;
+      if (showSale) thHtml += `<th style="text-align: right; padding-bottom: 4px; font-weight: bold; width: 18%;">SALE</th>`;
+
+      let tableRowsHtml = '';
+      filtered.forEach((item) => {
+        const costVal = Number(item.cost || 0).toFixed(2);
+        const saleVal = Number(item.sale || 0).toFixed(2);
+        let nameDisplay = cleanThermalText(item.name);
+        if (showSize && item.size) {
+          nameDisplay += ` (${cleanThermalText(item.size)})`;
+        }
+
+        tableRowsHtml += `<tr style="border-bottom: 1px dashed #ccc;">`;
+        if (showName) {
+          tableRowsHtml += `
+            <td style="padding: 4px 0; text-align: left; vertical-align: top; word-break: break-word; font-weight: 600;">
+              ${escapeAttr(nameDisplay)}
+            </td>
+          `;
+        }
+        if (showCost) tableRowsHtml += `<td style="padding: 4px 2px; text-align: right; vertical-align: top; font-weight: bold;">${costVal}</td>`;
+        if (showSale) tableRowsHtml += `<td style="padding: 4px 0 4px 2px; text-align: right; vertical-align: top; font-weight: bold;">${saleVal}</td>`;
+        tableRowsHtml += `</tr>`;
+      });
+
+      let colCount = (showName ? 1 : 0) + (showCost ? 1 : 0) + (showSale ? 1 : 0);
+      if (colCount === 0) colCount = 1;
+
+      if (filtered.length === 0) {
+        tableRowsHtml = `<tr><td colspan="${colCount}" style="text-align: center; padding: 12px; color: #777;">No products in selected category.</td></tr>`;
+      }
+
+      const receiptMarkup = `
+        <div style="text-align: center; font-family: monospace, monospace; font-size: 11px; color: #000; line-height: 1.3;">
+          <div style="font-size: 16px; font-weight: 900; letter-spacing: 1px; text-transform: uppercase;">ARUN TRADERS</div>
+          <div style="font-size: 9px; margin-top: 1px; letter-spacing: 0.5px;">PRICE DIRECTORY & CATALOG</div>
+          <div style="margin-top: 4px; border-top: 1px dashed #000; border-bottom: 1px dashed #000; padding: 4px 0; font-size: 9px;">
+            DATE: ${dateStr}<br>
+            CAT: ${escapeAttr(catLabel)} (${filtered.length} ITEMS)
+          </div>
+          <table style="width: 100%; border-collapse: collapse; margin-top: 4px; font-size: 10px;">
+            <thead>
+              <tr style="border-bottom: 1.5px solid #000;">
+                ${thHtml}
+              </tr>
+            </thead>
+            <tbody>
+              ${tableRowsHtml}
+            </tbody>
+          </table>
+          <div style="margin-top: 10px; border-top: 1px dashed #000; padding-top: 6px; font-size: 9px; text-align: center; font-weight: bold;">
+            *** END OF LIST ***
+          </div>
+        </div>
+      `;
+
+      if (previewBox) previewBox.innerHTML = receiptMarkup;
+      if (printArea) printArea.innerHTML = receiptMarkup;
+    }
+
+    function triggerThermalPrint() {
+      renderPrintPreview();
+      window.print();
+    }
+
+    function viewPurchaseHistory(itemId, event) {
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+
+      const item = appState.items.find(i => String(i.id) === String(itemId));
+      if (!item) return;
+
+      document.getElementById('historyModalTitle').innerText = `${item.name} - History`;
+      const logs = appState.purchaseRecords.filter(p => String(p.itemId) === String(itemId));
+      
+      const totalQtySpan = document.getElementById('historyTotalQty');
+      const avgPriceSpan = document.getElementById('historyAvgPrice');
+      const tableBody = document.getElementById('historyTableBody');
+      const emptyState = document.getElementById('historyEmptyState');
+
+      tableBody.innerHTML = '';
+
+      if (logs.length === 0) {
+        totalQtySpan.innerText = "0 Units";
+        avgPriceSpan.innerText = "₹0.00";
+        emptyState.classList.remove('hidden');
+        showModal('historyModal');
+        return;
+      }
+      emptyState.classList.add('hidden');
+
+      let totalQty = 0;
+      let totalCost = 0;
+      const sortedLogs = [...logs].sort((a,b) => new Date(b.date) - new Date(a.date));
+
+      sortedLogs.forEach(log => {
+        totalQty += log.qty;
+        totalCost += (log.qty * log.unitCost);
+
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-50 dark:hover:bg-slate-700/50 text-[11px]";
+        tr.innerHTML = `
+          <td class="py-2 px-3 font-medium text-slate-600 dark:text-slate-300">${formatFriendlyDate(log.date)}</td>
+          <td class="py-2 px-2 text-right font-bold text-slate-700 dark:text-slate-200">${log.qty}</td>
+          <td class="py-2 px-3 text-right font-bold text-slate-800 dark:text-slate-100">₹${Number(log.unitCost).toFixed(2)}</td>
+        `;
+        tableBody.appendChild(tr);
+      });
+
+      const avgBuy = totalQty > 0 ? (totalCost / totalQty) : 0;
+      totalQtySpan.innerText = `${totalQty} Units`;
+      avgPriceSpan.innerText = `₹${avgBuy.toFixed(2)}`;
+
+      showModal('historyModal');
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      if (!container) return;
+
+      const toast = document.createElement('div');
+      toast.className = `px-4 py-2.5 rounded-xl shadow-lg text-xs font-semibold text-white transition-all duration-300 pointer-events-auto transform translate-y-2 opacity-0 flex items-center gap-2`;
+      
+      if (type === 'success') {
+        toast.className += ' bg-emerald-600';
+        toast.innerHTML = `🟢 ${escapeAttr(message)}`;
+      } else if (type === 'error') {
+        toast.className += ' bg-rose-600';
+        toast.innerHTML = `🔴 ${escapeAttr(message)}`;
+      } else {
+        toast.className += ' bg-[#0f172a]';
+        toast.innerHTML = `ℹ️ ${escapeAttr(message)}`;
+      }
+
+      container.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      }, 10);
+
+      setTimeout(() => {
+        toast.classList.add('translate-y-2', 'opacity-0');
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    function downloadOfflineApp() {
+      const htmlContent = document.documentElement.outerHTML;
+      const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", "Arun_Traders_Price_List_v9.1.html");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+      showToast("App downloaded for offline use!", "success");
+    }
+
+    let activeConfirmCallback = null;
+
+    function customConfirm(text, callback) {
+      document.getElementById('confirmModalText').innerText = text;
+      activeConfirmCallback = callback;
+      
+      const proceedBtn = document.getElementById('confirmProceedBtn');
+      const newProceedBtn = proceedBtn.cloneNode(true);
+      proceedBtn.parentNode.replaceChild(newProceedBtn, proceedBtn);
+      
+      newProceedBtn.addEventListener('click', function() {
+        if (activeConfirmCallback) activeConfirmCallback();
+        closeModal('confirmModal');
+      });
+
+      showModal('confirmModal');
+    }
+
+    function formatFriendlyDate(isoString) {
+      if (!isoString) return "N/A";
+      const d = new Date(isoString);
+      const day = d.getDate();
+      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const monthStr = months[d.getMonth()];
+      const yearStr = d.getFullYear().toString().slice(-2);
+      return `${day} ${monthStr} ${yearStr}`;
+    }
+  </script>
+</body>
+</html>
