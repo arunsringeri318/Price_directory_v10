@@ -290,8 +290,9 @@
 
       <!-- New Entry stock logging drawer -->
       <div id="stockFormContainer" class="hidden bg-white dark:bg-slate-800 p-4 rounded-xl border-l-4 border-emerald-500 shadow-sm space-y-3">
-        <h3 class="text-xs font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1">🟢 Log New Purchase Entry</h3>
+        <h3 id="stockFormTitle" class="text-xs font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1">🟢 Log New Purchase Entry</h3>
         <form id="purchaseForm" onsubmit="savePurchaseEntry(event)" class="space-y-3 text-xs">
+          <input type="hidden" id="editPurchaseRecordId">
           <div class="relative">
             <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Select Product</label>
             <div class="relative">
@@ -784,6 +785,27 @@
 
   <!-- ======================== APPLICATION SCRIPT ======================== -->
   <script>
+    function formatINR(val) {
+      const num = Number(val) || 0;
+      return '₹' + num.toLocaleString('en-IN', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    }
+
+    function formatLakhs(val) {
+      const num = Number(val) || 0;
+      if (Math.abs(num) >= 10000000) {
+        const cr = num / 10000000;
+        return '₹' + parseFloat(cr.toFixed(2)) + ' Cr';
+      } else if (Math.abs(num) >= 100000) {
+        const lakh = num / 100000;
+        return '₹' + parseFloat(lakh.toFixed(2)) + ' L';
+      } else {
+        return formatINR(num);
+      }
+    }
+
     let appState = {
       items: [],
       categories: [
@@ -2024,6 +2046,8 @@
       
       if (isCurrentlyHidden) {
         container.classList.remove('hidden');
+        document.getElementById('stockFormTitle').innerText = "🟢 Log New Purchase Entry";
+        document.getElementById('editPurchaseRecordId').value = "";
         document.getElementById('purchaseItemSearch').value = "";
         document.getElementById('purchaseItemId').value = "";
         document.getElementById('purchaseForm').reset();
@@ -2105,12 +2129,13 @@
       const qty = parseFloat(document.getElementById('purchaseQty').value) || 0;
       const cost = parsePrice(document.getElementById('purchaseUnitCost').value);
       const display = document.getElementById('purchaseTotalDisplay');
-      display.innerText = `₹${(qty * cost).toFixed(2)}`;
+      display.innerText = formatINR(qty * cost);
     }
 
     function savePurchaseEntry(e) {
       e.preventDefault();
 
+      const editRecordId = document.getElementById('editPurchaseRecordId').value;
       const itemId = document.getElementById('purchaseItemId').value;
       const qty = parseFloat(document.getElementById('purchaseQty').value);
       const unitCost = parsePrice(document.getElementById('purchaseUnitCost').value);
@@ -2121,15 +2146,24 @@
         return;
       }
 
-      const newRecord = {
-        id: Date.now() + Math.random(),
-        itemId,
-        qty,
-        unitCost,
-        date
-      };
-
-      appState.purchaseRecords.push(newRecord);
+      if (editRecordId) {
+        const record = appState.purchaseRecords.find(r => String(r.id) === String(editRecordId));
+        if (record) {
+          record.itemId = itemId;
+          record.qty = qty;
+          record.unitCost = unitCost;
+          record.date = date;
+        }
+      } else {
+        const newRecord = {
+          id: Date.now() + Math.random(),
+          itemId,
+          qty,
+          unitCost,
+          date
+        };
+        appState.purchaseRecords.push(newRecord);
+      }
       
       const directoryProduct = appState.items.find(i => String(i.id) === String(itemId));
       if (directoryProduct) {
@@ -2141,7 +2175,37 @@
       renderLedger();
       renderDirectory();
       toggleStockForm();
-      showToast("Purchase log added successfully!", "success");
+      showToast(editRecordId ? "Purchase entry updated!" : "Purchase log added successfully!", "success");
+    }
+
+    function editLedgerRecord(recId, event) {
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      closeAllDropdowns();
+
+      const record = appState.purchaseRecords.find(r => String(r.id) === String(recId));
+      if (!record) return;
+
+      const item = appState.items.find(i => String(i.id) === String(record.itemId));
+      if (!item) return;
+
+      const container = document.getElementById('stockFormContainer');
+      container.classList.remove('hidden');
+      
+      document.getElementById('stockFormTitle').innerText = "✏️ Edit Purchase Entry";
+      document.getElementById('editPurchaseRecordId').value = record.id;
+      
+      selectPurchaseItem(item);
+      
+      document.getElementById('purchaseQty').value = record.qty;
+      document.getElementById('purchaseUnitCost').value = record.unitCost;
+      document.getElementById('purchaseDate').value = record.date;
+      
+      calculatePurchaseTotal();
+
+      container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
     function setPurchaseDateToToday() {
@@ -2178,7 +2242,7 @@
 
       let sumInvestment = 0;
       filtered.forEach(r => sumInvestment += (r.qty * r.unitCost));
-      document.getElementById('ledgerTotalCost').innerText = `₹${sumInvestment.toFixed(2)}`;
+      document.getElementById('ledgerTotalCost').innerText = formatLakhs(sumInvestment);
       document.getElementById('ledgerTotalCount').innerText = `${filtered.length} Records`;
 
       if (filtered.length === 0) {
@@ -2212,7 +2276,10 @@
               ⋮
             </button>
             
-            <div id="row-menu-ledger-${escapeAttr(rec.id)}" class="action-dropdown-box hidden absolute right-2 top-8 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl rounded-lg py-1 w-24 z-50 text-slate-700 dark:text-slate-200 text-[11px]">
+            <div id="row-menu-ledger-${escapeAttr(rec.id)}" class="action-dropdown-box hidden absolute right-2 top-8 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl rounded-lg py-1 w-28 z-50 text-slate-700 dark:text-slate-200 text-[11px]">
+              <button type="button" data-id="${escapeAttr(rec.id)}" onclick="editLedgerRecord(this.dataset.id, event)" class="w-full text-left px-3 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-1 border-b border-slate-100 dark:border-slate-700 font-semibold">
+                ✏️ Edit
+              </button>
               <button type="button" data-id="${escapeAttr(rec.id)}" onclick="deleteLedgerRecordDirect(this.dataset.id, event)" class="w-full text-left px-3 py-1.5 hover:bg-rose-50 dark:hover:bg-rose-900/30 text-rose-600 dark:text-rose-400 flex items-center gap-1">
                 🗑️ Delete
               </button>
