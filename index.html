@@ -655,30 +655,38 @@
     </div>
   </div>
 
-  <!-- MODAL: ITEM PURCHASE HISTORY -->
+  <!-- MODAL: ITEM PURCHASE HISTORY (UPDATED WITH TOTAL AMOUNT STAT & COLUMN) -->
   <div id="historyModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs hidden items-start justify-center p-3 pt-6 sm:pt-10 z-50">
     <div class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col max-h-[85vh]">
       <div class="bg-[#0f172a] text-white px-4 py-3 font-semibold text-sm flex justify-between items-center shrink-0">
         <span id="historyModalTitle" class="truncate pr-2">Purchase History</span>
         <button type="button" onclick="closeModal('historyModal')" class="hover:text-slate-200 text-lg">&times;</button>
       </div>
-      <div class="p-3 bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700 flex justify-between text-xs shrink-0">
+      
+      <!-- Summary Header Tiles -->
+      <div class="p-3 bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700 grid grid-cols-3 gap-1.5 text-xs shrink-0">
         <div>
-          <span class="text-[9px] font-bold text-slate-400 uppercase block">Total Purchased</span>
+          <span class="text-[9px] font-bold text-slate-400 uppercase block">Total Qty</span>
           <span id="historyTotalQty" class="font-bold text-slate-800 dark:text-slate-100">0 Units</span>
+        </div>
+        <div class="text-center">
+          <span class="text-[9px] font-bold text-slate-400 uppercase block">Total Amount</span>
+          <span id="historyTotalAmount" class="font-bold text-blue-600 dark:text-blue-400">₹0.00</span>
         </div>
         <div class="text-right">
           <span class="text-[9px] font-bold text-slate-400 uppercase block">Avg Buy Price</span>
           <span id="historyAvgPrice" class="font-bold text-emerald-600 dark:text-emerald-400">₹0.00</span>
         </div>
       </div>
+
       <div class="p-2 flex-1 overflow-y-auto no-scrollbar">
         <table class="w-full text-left text-xs border-collapse">
           <thead>
             <tr class="border-b border-slate-200 dark:border-slate-700 text-[10px] text-slate-400 uppercase font-bold">
               <th class="py-1.5 px-3">Date</th>
-              <th class="py-1.5 px-2 text-right">Qty</th>
-              <th class="py-1.5 px-3 text-right">Unit Price</th>
+              <th class="py-1.5 px-1 text-center">Qty</th>
+              <th class="py-1.5 px-2 text-right">Unit Price</th>
+              <th class="py-1.5 px-3 text-right">Total</th>
             </tr>
           </thead>
           <tbody id="historyTableBody" class="divide-y divide-slate-100 dark:divide-slate-700"></tbody>
@@ -793,6 +801,14 @@
       });
     }
 
+    function formatNumberINR(val) {
+      const num = Number(val) || 0;
+      return num.toLocaleString('en-IN', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    }
+
     function formatLakhs(val) {
       const num = Number(val) || 0;
       if (Math.abs(num) >= 10000000) {
@@ -880,7 +896,6 @@
 
     function registerPWA() {
       try {
-        // Dynamically register Web App Manifest
         const manifestData = {
           name: "Price Directory v10",
           short_name: "Price Directory",
@@ -905,7 +920,6 @@
         manifestLink.href = manifestURL;
         document.head.appendChild(manifestLink);
 
-        // Register Service Worker for offline capability
         if ('serviceWorker' in navigator) {
           const swCode = `
             const CACHE_NAME = 'price-directory-v10-cache';
@@ -1401,15 +1415,15 @@
           <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase block border-b border-slate-200 dark:border-slate-600 pb-1">Unit Valuation Breakdown</span>
           <div class="flex justify-between items-center">
             <span class="text-slate-600 dark:text-slate-300">Sum of Cost Prices:</span>
-            <span class="font-bold text-slate-800 dark:text-slate-100">₹${totalCatalogCostVal.toFixed(2)}</span>
+            <span class="font-bold text-slate-800 dark:text-slate-100">${formatINR(totalCatalogCostVal)}</span>
           </div>
           <div class="flex justify-between items-center">
             <span class="text-slate-600 dark:text-slate-300">Sum of Sale Prices:</span>
-            <span class="font-bold text-emerald-600 dark:text-emerald-400">₹${totalCatalogSaleVal.toFixed(2)}</span>
+            <span class="font-bold text-emerald-600 dark:text-emerald-400">${formatINR(totalCatalogSaleVal)}</span>
           </div>
           <div class="flex justify-between items-center border-t border-slate-200 dark:border-slate-600 pt-1.5 font-bold">
             <span class="text-slate-700 dark:text-slate-200">Potential Unit Margin:</span>
-            <span class="${estMargin >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-rose-600'}">₹${estMargin.toFixed(2)}</span>
+            <span class="${estMargin >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-rose-600'}">${formatINR(estMargin)}</span>
           </div>
         </div>
 
@@ -1480,10 +1494,10 @@
             </div>
           </td>
           <td class="py-2.5 px-1 text-center font-bold text-[12px] text-slate-800 dark:text-slate-200 whitespace-nowrap border-r border-slate-100 dark:border-slate-700 truncate">
-            ₹${Number(item.cost).toFixed(2)}
+            ${formatINR(item.cost)}
           </td>
           <td class="py-2.5 px-1 text-center font-bold text-[12px] text-[#10b981] whitespace-nowrap border-r border-slate-100 dark:border-slate-700 truncate">
-            ₹${Number(item.sale).toFixed(2)}
+            ${formatINR(item.sale)}
           </td>
           <td class="py-2.5 !px-0 text-center relative overflow-visible">
             <button type="button" data-id="${escapeAttr(item.id)}" onclick="toggleRowActionsMenu(this.dataset.id, event)" class="action-menu-btn w-6 h-6 inline-flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 bg-slate-50 dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 rounded active:scale-90 transition-all">
@@ -1546,6 +1560,7 @@
       setPurchaseDateToToday();
 
       setTimeout(() => {
+        container.scrollIntoView({ behavior: 'smooth', block: 'start' });
         const qtyInput = document.getElementById('purchaseQty');
         if (qtyInput) {
           qtyInput.value = 1;
@@ -1553,7 +1568,7 @@
           qtyInput.focus();
           qtyInput.select();
         }
-      }, 100);
+      }, 50);
     }
 
     function populateCategorySelectors() {
@@ -2053,6 +2068,11 @@
         document.getElementById('purchaseForm').reset();
         setPurchaseDateToToday();
         document.getElementById('purchaseTotalDisplay').innerText = "₹0.00";
+        setTimeout(() => {
+          container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          const searchInput = document.getElementById('purchaseItemSearch');
+          if (searchInput) searchInput.focus();
+        }, 50);
       } else {
         container.classList.add('hidden');
       }
@@ -2087,7 +2107,7 @@
             <div class="font-bold text-slate-800 dark:text-slate-100">${escapeAttr(item.name)}</div>
             <div class="text-[10px] text-slate-400 flex justify-between mt-0.5">
               <span>${item.size ? `${escapeAttr(item.size)}` : ''}</span>
-              <span class="font-bold text-slate-600 dark:text-slate-300">₹${Number(item.cost).toFixed(2)}</span>
+              <span class="font-bold text-slate-600 dark:text-slate-300">${formatINR(item.cost)}</span>
             </div>
           `;
           
@@ -2205,7 +2225,9 @@
       
       calculatePurchaseTotal();
 
-      container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      setTimeout(() => {
+        container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 50);
     }
 
     function setPurchaseDateToToday() {
@@ -2259,7 +2281,9 @@
         
         tr.innerHTML = `
           <td class="py-2.5 px-3 text-left overflow-visible border-r border-slate-100 dark:border-slate-700">
-            <span class="font-bold text-slate-800 dark:text-slate-100 block text-[11px] leading-tight">${escapeAttr(rec.product.name)}</span>
+            <button type="button" data-id="${escapeAttr(rec.itemId)}" onclick="viewPurchaseHistory(this.dataset.id, event)" class="font-bold text-[11px] text-slate-800 dark:text-slate-100 hover:underline hover:text-blue-600 dark:hover:text-blue-400 text-left block truncate w-full leading-tight cursor-pointer" title="View purchase history for ${escapeAttr(rec.product.name)}">
+              ${escapeAttr(rec.product.name)}
+            </button>
             <div class="flex items-center gap-1 mt-1 whitespace-nowrap flex-nowrap overflow-hidden">
               <span class="text-[8px] bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold px-1.5 py-[1px] rounded-full border border-slate-200 dark:border-slate-600 shrink-0">Qty: ${rec.qty}</span>
               ${rec.product.size ? `<span class="text-[8px] font-bold bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 px-1.5 py-[1px] rounded-full uppercase tracking-wider shrink-0 truncate max-w-[140px]">${escapeAttr(rec.product.size)}</span>` : ''}
@@ -2269,7 +2293,7 @@
             ${formatFriendlyDate(rec.date)}
           </td>
           <td class="py-2.5 px-2 text-center font-bold text-slate-700 dark:text-slate-200 text-[10px] whitespace-nowrap border-r border-slate-100 dark:border-slate-700">
-            ₹${Number(rec.unitCost).toFixed(2)}
+            ${formatINR(rec.unitCost)}
           </td>
           <td class="py-2.5 !px-0 text-center relative overflow-visible">
             <button type="button" data-id="${escapeAttr(rec.id)}" onclick="toggleRowActionsMenu('ledger-' + this.dataset.id, event)" class="action-menu-btn w-6 h-6 inline-flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 bg-slate-50 dark:bg-slate-700 rounded">
@@ -3419,6 +3443,7 @@
       const logs = appState.purchaseRecords.filter(p => String(p.itemId) === String(itemId));
       
       const totalQtySpan = document.getElementById('historyTotalQty');
+      const totalAmountSpan = document.getElementById('historyTotalAmount');
       const avgPriceSpan = document.getElementById('historyAvgPrice');
       const tableBody = document.getElementById('historyTableBody');
       const emptyState = document.getElementById('historyEmptyState');
@@ -3427,6 +3452,7 @@
 
       if (logs.length === 0) {
         totalQtySpan.innerText = "0 Units";
+        if (totalAmountSpan) totalAmountSpan.innerText = "₹0.00";
         avgPriceSpan.innerText = "₹0.00";
         emptyState.classList.remove('hidden');
         showModal('historyModal');
@@ -3439,22 +3465,25 @@
       const sortedLogs = [...logs].sort((a,b) => new Date(b.date) - new Date(a.date));
 
       sortedLogs.forEach(log => {
+        const lineTotal = (log.qty * log.unitCost);
         totalQty += log.qty;
-        totalCost += (log.qty * log.unitCost);
+        totalCost += lineTotal;
 
         const tr = document.createElement('tr');
         tr.className = "hover:bg-slate-50 dark:hover:bg-slate-700/50 text-[11px]";
         tr.innerHTML = `
           <td class="py-2 px-3 font-medium text-slate-600 dark:text-slate-300">${formatFriendlyDate(log.date)}</td>
-          <td class="py-2 px-2 text-right font-bold text-slate-700 dark:text-slate-200">${log.qty}</td>
-          <td class="py-2 px-3 text-right font-bold text-slate-800 dark:text-slate-100">₹${Number(log.unitCost).toFixed(2)}</td>
+          <td class="py-2 px-1 text-center font-bold text-slate-700 dark:text-slate-200">${log.qty}</td>
+          <td class="py-2 px-2 text-right font-bold text-slate-800 dark:text-slate-100">${formatINR(log.unitCost)}</td>
+          <td class="py-2 px-3 text-right font-bold text-blue-600 dark:text-blue-400">${formatINR(lineTotal)}</td>
         `;
         tableBody.appendChild(tr);
       });
 
       const avgBuy = totalQty > 0 ? (totalCost / totalQty) : 0;
       totalQtySpan.innerText = `${totalQty} Units`;
-      avgPriceSpan.innerText = `₹${avgBuy.toFixed(2)}`;
+      if (totalAmountSpan) totalAmountSpan.innerText = formatINR(totalCost);
+      avgPriceSpan.innerText = formatINR(avgBuy);
 
       showModal('historyModal');
     }
