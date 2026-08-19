@@ -66,28 +66,28 @@
   <!-- Hidden file input for direct JSON backup import -->
   <input type="file" id="jsonBackupInput" accept=".json,application/json,.txt,text/plain" class="hidden" onchange="importJSONBackupFile(event)">
 
-  <!-- Header Section -->
-  <header class="pt-1.5 pb-0.5 px-4">
-    <div class="max-w-md mx-auto flex items-center justify-between">
-      <div class="flex flex-col items-start text-left">
-        <div class="flex items-center gap-2">
-          <span class="text-xl">🏢</span>
-          <h1 class="text-lg font-black text-[#0f172a] dark:text-white tracking-tight">Price Directory</h1>
-          <span class="bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 text-[9px] font-bold px-1.5 py-0.5 rounded-full">v10</span>
+  <!-- Header Section (Matching Sleek Dark Aesthetic) -->
+  <header class="pt-2.5 pb-2.5 px-4 bg-[#0f172a] text-white rounded-b-2xl shadow-md mb-3 max-w-md mx-auto">
+    <div class="flex items-center justify-between">
+      <div class="flex flex-col items-start text-left min-w-0 mr-1">
+        <div class="flex items-center gap-1.5">
+          <span class="text-lg shrink-0">🏢</span>
+          <h1 class="text-base font-extrabold text-white tracking-tight whitespace-nowrap">Price Directory</h1>
+          <span class="bg-amber-400 text-slate-950 text-[9px] font-black px-1.5 py-0.5 rounded-full shadow-xs shrink-0">v10</span>
         </div>
-        <p class="text-[10px] text-slate-500 dark:text-slate-400 font-medium mt-0.5">Price Directory & Stock Purchase</p>
+        <p class="text-[10px] text-slate-400 font-medium mt-0.5 whitespace-nowrap">Price Directory & Stock Purchase</p>
       </div>
 
       <!-- Top Right Action Buttons -->
       <div class="flex items-center gap-1.5 shrink-0">
-        <button type="button" onclick="openPrintModal()" class="w-8 h-8 flex items-center justify-center rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-xs transition-all active:scale-95" title="3-Inch Thermal Print">
-          <span class="text-sm">🖨️</span>
+        <button type="button" onclick="openPrintModal()" class="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-900/90 border border-slate-700/80 text-white hover:bg-slate-800 shadow-sm transition-all active:scale-95" title="3-Inch Thermal Print">
+          <span class="text-base">🖨️</span>
         </button>
-        <button type="button" onclick="openStatsModal()" class="w-8 h-8 flex items-center justify-center rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-xs transition-all active:scale-95" title="Catalog Overview & Stats">
-          <span class="text-sm">📊</span>
+        <button type="button" onclick="openStatsModal()" class="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-900/90 border border-slate-700/80 text-white hover:bg-slate-800 shadow-sm transition-all active:scale-95" title="Catalog Overview & Stats">
+          <span class="text-base">📊</span>
         </button>
-        <button type="button" onclick="toggleDarkMode()" class="w-8 h-8 flex items-center justify-center rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-xs transition-all active:scale-95" title="Toggle Dark Theme">
-          <span id="darkThemeHeaderIcon" class="text-sm">🌙</span>
+        <button type="button" onclick="toggleDarkMode()" class="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-900/90 border border-slate-700/80 text-amber-400 hover:bg-slate-800 shadow-sm transition-all active:scale-95" title="Toggle Dark Theme">
+          <span id="darkThemeHeaderIcon" class="text-base">🌙</span>
         </button>
       </div>
     </div>
@@ -106,7 +106,7 @@
   </div>
 
   <!-- Main Workspace -->
-  <main class="max-w-md mx-auto px-4 pb-12">
+  <main class="max-w-md mx-auto px-4 pb-28">
 
     <!-- TAB 1: PRICE DIRECTORY -->
     <section id="pane-directory" class="space-y-2">
@@ -275,16 +275,19 @@
       </div>
 
       <!-- Action & Search Filter Panel -->
-      <div class="flex gap-2 items-center bg-white dark:bg-slate-800 p-2 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm">
+      <div class="flex gap-1.5 items-center bg-white dark:bg-slate-800 p-2 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm">
         <div class="relative flex-1">
           <span class="absolute inset-y-0 left-2.5 flex items-center pointer-events-none text-slate-400 text-[10px]">🔍</span>
           <input type="text" id="ledgerSearch" oninput="filterLedger()" placeholder="Search transactions..." class="w-full pl-7 pr-2 py-1.5 text-xs border border-slate-200 dark:border-slate-700 dark:bg-slate-700 dark:text-white rounded-lg focus:outline-none focus:border-emerald-500 bg-slate-50/50">
         </div>
-        <button type="button" onclick="toggleStockForm()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3 py-2 rounded-lg transition-all active:scale-95 shadow-sm whitespace-nowrap">
+        <button type="button" onclick="toggleStockForm()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-2.5 py-2 rounded-lg transition-all active:scale-95 shadow-sm whitespace-nowrap" title="Log Single Product Purchase">
           🟢 Log Stock
         </button>
-        <button type="button" onclick="confirmResetLedger()" class="bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 border border-rose-100 dark:border-rose-800 text-xs font-semibold px-2 py-2 rounded-lg hover:bg-rose-100 transition-all active:scale-95">
-          🗑️ Reset
+        <button type="button" onclick="openMultiStockModal()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-2.5 py-2 rounded-lg transition-all active:scale-95 shadow-sm" title="Log Multiple Products At Once">
+          📋
+        </button>
+        <button type="button" onclick="confirmResetLedger()" class="bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 border border-rose-100 dark:border-rose-800 text-xs font-semibold px-2 py-2 rounded-lg hover:bg-rose-100 transition-all active:scale-95" title="Reset Ledger">
+          🗑️
         </button>
       </div>
 
@@ -655,21 +658,52 @@
     </div>
   </div>
 
-  <!-- MODAL: ITEM PURCHASE HISTORY (UPDATED WITH TOTAL AMOUNT STAT & COLUMN) -->
+  <!-- MODAL: BATCH / MULTI-PRODUCT STOCK PURCHASE LOGGING -->
+  <div id="multiStockModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs hidden items-start justify-center p-3 pt-6 sm:pt-10 z-50">
+    <div class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]">
+      <div class="bg-emerald-700 text-white px-4 py-3 font-semibold text-sm flex justify-between items-center shrink-0">
+        <span class="flex items-center gap-1.5">📋 Batch Stock Purchase Entry</span>
+        <button type="button" onclick="closeModal('multiStockModal')" class="hover:text-slate-200 text-lg">&times;</button>
+      </div>
+
+      <div class="p-3 bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between gap-2 shrink-0">
+        <div>
+          <label class="block text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-0.5">Purchase Date</label>
+          <input type="date" id="multiBatchDate" class="p-1.5 border border-slate-200 dark:border-slate-600 dark:bg-slate-800 dark:text-white text-xs rounded-lg focus:outline-none font-semibold">
+        </div>
+        <button type="button" onclick="addMultiStockRow()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-2 rounded-lg transition-all active:scale-95 shadow-xs flex items-center gap-1">
+          <span>➕ Add Product Row</span>
+        </button>
+      </div>
+
+      <div class="p-3 flex-1 overflow-y-auto no-scrollbar space-y-2 text-xs" id="multiStockRowsContainer"></div>
+
+      <div class="bg-slate-50 dark:bg-slate-700/50 border-t border-slate-200 dark:border-slate-700 p-3 flex justify-between items-center shrink-0">
+        <div>
+          <span class="text-[9px] font-bold text-slate-400 uppercase block">Grand Total</span>
+          <span id="multiBatchGrandTotal" class="text-sm font-bold text-emerald-600 dark:text-emerald-400">₹0.00</span>
+        </div>
+        <div class="flex gap-1.5">
+          <button type="button" onclick="closeModal('multiStockModal')" class="px-3 py-1.5 bg-slate-200 dark:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-semibold">Cancel</button>
+          <button type="button" onclick="saveMultiStockEntries()" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-xs shadow-xs">Save All Entries</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ITEM PURCHASE HISTORY -->
   <div id="historyModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs hidden items-start justify-center p-3 pt-6 sm:pt-10 z-50">
     <div class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col max-h-[85vh]">
       <div class="bg-[#0f172a] text-white px-4 py-3 font-semibold text-sm flex justify-between items-center shrink-0">
         <span id="historyModalTitle" class="truncate pr-2">Purchase History</span>
         <button type="button" onclick="closeModal('historyModal')" class="hover:text-slate-200 text-lg">&times;</button>
       </div>
-      
-      <!-- Summary Header Tiles -->
-      <div class="p-3 bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700 grid grid-cols-3 gap-1.5 text-xs shrink-0">
+      <div class="p-3 bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700 flex justify-between text-xs shrink-0">
         <div>
-          <span class="text-[9px] font-bold text-slate-400 uppercase block">Total Qty</span>
+          <span class="text-[9px] font-bold text-slate-400 uppercase block">Total Purchased</span>
           <span id="historyTotalQty" class="font-bold text-slate-800 dark:text-slate-100">0 Units</span>
         </div>
-        <div class="text-center">
+        <div>
           <span class="text-[9px] font-bold text-slate-400 uppercase block">Total Amount</span>
           <span id="historyTotalAmount" class="font-bold text-blue-600 dark:text-blue-400">₹0.00</span>
         </div>
@@ -678,7 +712,6 @@
           <span id="historyAvgPrice" class="font-bold text-emerald-600 dark:text-emerald-400">₹0.00</span>
         </div>
       </div>
-
       <div class="p-2 flex-1 overflow-y-auto no-scrollbar">
         <table class="w-full text-left text-xs border-collapse">
           <thead>
@@ -787,8 +820,28 @@
     </div>
   </div>
 
-  <div class="text-center py-6 text-[10px] text-slate-400">
+  <div class="text-center py-6 text-[10px] text-slate-400 mb-16">
     Price Directory &copy; 2026 | v10 PWA Edition | All data is stored locally in your browser.
+  </div>
+
+  <!-- FIXED SOLID MULTICOLOR BOTTOM ACTION FOOTER BAR -->
+  <div id="appFixedFooter" class="fixed bottom-0 left-0 right-0 z-[60] p-2.5 bg-[#0f172a] dark:bg-slate-950 border-t border-slate-800/80 shadow-2xl backdrop-blur-md">
+    <div class="max-w-md mx-auto flex items-center justify-between gap-2">
+      <!-- 🟢 Log Stock Action Button -->
+      <button type="button" onclick="triggerBottomLogStock()" class="flex-1 py-2.5 px-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all whitespace-nowrap cursor-pointer">
+        <span>🟢</span> Log Stock
+      </button>
+
+      <!-- 📋 Multi Log Action Button -->
+      <button type="button" onclick="triggerBottomMultiLog()" class="flex-1 py-2.5 px-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all whitespace-nowrap cursor-pointer">
+        <span>📋</span> Multi Log
+      </button>
+
+      <!-- 🏷️ Total Items Badge / Button -->
+      <button type="button" onclick="openStatsModal()" class="py-2.5 px-3 bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all whitespace-nowrap shrink-0 cursor-pointer" title="Click to view full stats">
+        <span>🏷️</span> <span id="footerTotalItemsCount">0 Items</span>
+      </button>
+    </div>
   </div>
 
   <!-- ======================== APPLICATION SCRIPT ======================== -->
@@ -982,6 +1035,10 @@
         if (!e.target.closest('.bulk-edit-cat-popover') && !e.target.closest('[id^="bulk-cat-trigger-"]')) {
           document.querySelectorAll('.bulk-edit-cat-popover').forEach(p => p.classList.add('hidden'));
         }
+
+        if (!e.target.closest('[id^="multiDropdown_"]') && !e.target.closest('[id^="multiSearch_"]')) {
+          document.querySelectorAll('[id^="multiDropdown_"]').forEach(d => d.classList.add('hidden'));
+        }
       });
     };
 
@@ -1055,7 +1112,7 @@
           if (!item.category || item.category.toLowerCase() === 'uncategorized') item.category = 'General';
           if (item.cost === undefined) item.cost = parsePrice(item.price);
           else item.cost = parsePrice(item.cost);
-          if (item.sale === undefined) item.sale = parsePrice(item.price);
+          if (item.sale === undefined) item.sale = parsePrice(item.sale);
           else item.sale = parsePrice(item.sale);
           if (!item.size) item.size = '';
           if (!item.updatedAt) item.updatedAt = new Date().toISOString();
@@ -1068,12 +1125,38 @@
       saveState();
       populateCategorySelectors();
       renderDirectory();
+      updateFooterItemCount();
       setLedgerDatePreset('today');
+    }
+
+    function updateFooterItemCount() {
+      const el = document.getElementById('footerTotalItemsCount');
+      if (el) {
+        const count = appState.items ? appState.items.length : 0;
+        el.innerText = `${count} Items`;
+      }
+    }
+
+    function triggerBottomLogStock() {
+      switchTab('ledger');
+      const container = document.getElementById('stockFormContainer');
+      if (container && container.classList.contains('hidden')) {
+        toggleStockForm();
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        const searchInput = document.getElementById('purchaseItemSearch');
+        if (searchInput) searchInput.focus();
+      }
+    }
+
+    function triggerBottomMultiLog() {
+      openMultiStockModal();
     }
 
     function saveState() {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+        updateFooterItemCount();
       } catch (e) {
         console.error("Error saving state to localStorage:", e);
       }
@@ -1243,6 +1326,228 @@
         modal.classList.remove('flex');
         modal.classList.add('hidden');
       }
+    }
+
+    /* BATCH MULTI-PRODUCT STOCK LOGGING SCRIPT */
+    let multiRowCounter = 0;
+
+    function openMultiStockModal() {
+      closeAllDropdowns();
+      const dateInput = document.getElementById('multiBatchDate');
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      const day = String(today.getDate()).padStart(2, '0');
+      dateInput.value = `${year}-${month}-${day}`;
+
+      const container = document.getElementById('multiStockRowsContainer');
+      container.innerHTML = '';
+      multiRowCounter = 0;
+
+      // Initialize with 2 empty item rows
+      addMultiStockRow();
+      addMultiStockRow();
+
+      calculateMultiStockTotals();
+      showModal('multiStockModal');
+    }
+
+    function addMultiStockRow(prefilledItem = null) {
+      multiRowCounter++;
+      const rowId = multiRowCounter;
+      const container = document.getElementById('multiStockRowsContainer');
+
+      const div = document.createElement('div');
+      div.id = `multi-row-${rowId}`;
+      div.className = "multi-stock-row bg-slate-50 dark:bg-slate-700/50 p-2.5 rounded-xl border border-slate-200 dark:border-slate-600 space-y-2 relative";
+
+      div.innerHTML = `
+        <div class="flex items-center justify-between gap-1">
+          <span class="text-[10px] font-bold text-slate-400 uppercase">Item Row</span>
+          <button type="button" onclick="removeMultiStockRow(${rowId})" class="text-rose-500 hover:text-rose-700 text-xs px-1.5 py-0.5 rounded hover:bg-rose-50 dark:hover:bg-rose-900/30 transition-colors font-semibold" title="Remove item">&times; Remove</button>
+        </div>
+        
+        <div class="relative">
+          <label class="block text-[9px] font-semibold text-slate-500 dark:text-slate-400 mb-0.5">Product Name</label>
+          <input type="text" id="multiSearch_${rowId}" onfocus="showMultiDropdown(${rowId})" oninput="filterMultiDropdown(${rowId})" placeholder="🔍 Type product name..." class="w-full p-1.5 border border-slate-200 dark:border-slate-600 dark:bg-slate-800 dark:text-white rounded-lg text-xs focus:outline-none" autocomplete="off">
+          <input type="hidden" id="multiItemId_${rowId}">
+          <div id="multiDropdown_${rowId}" class="hidden absolute left-0 right-0 top-full mt-1 max-h-[220px] overflow-y-auto bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl z-[90] divide-y divide-slate-100 dark:divide-slate-700 text-xs no-scrollbar"></div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2 items-center">
+          <div>
+            <label class="block text-[9px] font-semibold text-slate-500 dark:text-slate-400 mb-0.5">Qty</label>
+            <input type="number" id="multiQty_${rowId}" value="1" min="1" step="any" oninput="calculateMultiStockTotals()" class="w-full p-1.5 border border-slate-200 dark:border-slate-600 dark:bg-slate-800 dark:text-white rounded-lg text-xs focus:outline-none font-bold text-center">
+          </div>
+          <div>
+            <label class="block text-[9px] font-semibold text-slate-500 dark:text-slate-400 mb-0.5">Unit Cost (₹)</label>
+            <input type="number" id="multiCost_${rowId}" placeholder="0.00" step="any" oninput="calculateMultiStockTotals()" class="w-full p-1.5 border border-slate-200 dark:border-slate-600 dark:bg-slate-800 dark:text-white rounded-lg text-xs focus:outline-none font-bold text-center">
+          </div>
+          <div>
+            <label class="block text-[9px] font-semibold text-slate-500 dark:text-slate-400 mb-0.5">Total Amount</label>
+            <div id="multiRowTotal_${rowId}" class="p-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg text-xs font-bold text-slate-800 dark:text-slate-100 text-right truncate">₹0.00</div>
+          </div>
+        </div>
+      `;
+
+      container.appendChild(div);
+
+      if (prefilledItem) {
+        selectMultiStockItem(rowId, prefilledItem);
+      }
+      updateMultiRowLabels();
+    }
+
+    function updateMultiRowLabels() {
+      const rows = document.querySelectorAll('.multi-stock-row');
+      rows.forEach((row, idx) => {
+        const label = row.querySelector('.uppercase');
+        if (label) label.innerText = `Item #${idx + 1}`;
+      });
+    }
+
+    function removeMultiStockRow(rowId) {
+      const row = document.getElementById(`multi-row-${rowId}`);
+      if (row) {
+        row.remove();
+        updateMultiRowLabels();
+        calculateMultiStockTotals();
+      }
+    }
+
+    function showMultiDropdown(rowId) {
+      document.querySelectorAll('[id^="multiDropdown_"]').forEach(d => d.classList.add('hidden'));
+      const dropdown = document.getElementById(`multiDropdown_${rowId}`);
+      if (dropdown) {
+        dropdown.classList.remove('hidden');
+        filterMultiDropdown(rowId);
+      }
+    }
+
+    function filterMultiDropdown(rowId) {
+      const searchInput = document.getElementById(`multiSearch_${rowId}`);
+      if (!searchInput) return;
+      const rawQuery = searchInput.value.trim();
+      const query = rawQuery.toLowerCase();
+      const dropdown = document.getElementById(`multiDropdown_${rowId}`);
+      if (!dropdown) return;
+
+      dropdown.innerHTML = '';
+      const sortedItems = [...appState.items].sort((a,b) => (a.name || '').localeCompare(b.name || ''));
+      let matches = 0;
+
+      sortedItems.forEach(item => {
+        const sizeTag = item.size ? ` (${item.size})` : '';
+        const rawText = `${item.name}${sizeTag}`;
+        const itemCat = (item.category || '').toLowerCase();
+
+        if (!query || rawText.toLowerCase().includes(query) || itemCat.includes(query)) {
+          matches++;
+          const row = document.createElement('button');
+          row.type = "button";
+          row.className = "w-full text-left px-3 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-700 text-xs block border-b border-slate-50 dark:border-slate-700 transition-colors";
+          row.innerHTML = `
+            <div class="font-bold text-slate-800 dark:text-slate-100">${escapeAttr(item.name)}</div>
+            <div class="text-[10px] text-slate-400 flex justify-between mt-0.5">
+              <span>${item.size ? `${escapeAttr(item.size)}` : ''}</span>
+              <span class="font-bold text-slate-600 dark:text-slate-300">${formatINR(item.cost)}</span>
+            </div>
+          `;
+          row.onclick = function(e) {
+            if (e) e.stopPropagation();
+            selectMultiStockItem(rowId, item);
+          };
+          dropdown.appendChild(row);
+        }
+      });
+
+      if (matches === 0) {
+        dropdown.innerHTML = `<div class="p-2.5 text-center text-slate-400 text-xs">No matching products found</div>`;
+      }
+    }
+
+    function selectMultiStockItem(rowId, item) {
+      const searchInput = document.getElementById(`multiSearch_${rowId}`);
+      const idInput = document.getElementById(`multiItemId_${rowId}`);
+      const costInput = document.getElementById(`multiCost_${rowId}`);
+      const dropdown = document.getElementById(`multiDropdown_${rowId}`);
+
+      const sizeTag = item.size ? ` (${item.size})` : '';
+      if (searchInput) searchInput.value = `${item.name}${sizeTag}`;
+      if (idInput) idInput.value = item.id;
+      if (costInput) costInput.value = item.cost;
+
+      if (dropdown) dropdown.classList.add('hidden');
+      calculateMultiStockTotals();
+    }
+
+    function calculateMultiStockTotals() {
+      const rows = document.querySelectorAll('.multi-stock-row');
+      let grandTotal = 0;
+
+      rows.forEach(row => {
+        const rowId = row.id.replace('multi-row-', '');
+        const qtyInput = document.getElementById(`multiQty_${rowId}`);
+        const costInput = document.getElementById(`multiCost_${rowId}`);
+        const totalDiv = document.getElementById(`multiRowTotal_${rowId}`);
+
+        const qty = parseFloat(qtyInput ? qtyInput.value : 0) || 0;
+        const cost = parsePrice(costInput ? costInput.value : 0);
+        const lineTotal = qty * cost;
+
+        if (totalDiv) totalDiv.innerText = formatINR(lineTotal);
+        grandTotal += lineTotal;
+      });
+
+      const grandTotalSpan = document.getElementById('multiBatchGrandTotal');
+      if (grandTotalSpan) grandTotalSpan.innerText = formatINR(grandTotal);
+    }
+
+    function saveMultiStockEntries() {
+      const batchDate = document.getElementById('multiBatchDate').value;
+      if (!batchDate) {
+        showToast("Please select a valid purchase date.", "error");
+        return;
+      }
+
+      const rows = document.querySelectorAll('.multi-stock-row');
+      let validSavedCount = 0;
+
+      rows.forEach(row => {
+        const rowId = row.id.replace('multi-row-', '');
+        const itemId = document.getElementById(`multiItemId_${rowId}`).value;
+        const qty = parseFloat(document.getElementById(`multiQty_${rowId}`).value);
+        const unitCost = parsePrice(document.getElementById(`multiCost_${rowId}`).value);
+
+        if (itemId && qty > 0 && unitCost >= 0) {
+          const newRecord = {
+            id: Date.now() + Math.random(),
+            itemId,
+            qty,
+            unitCost,
+            date: batchDate
+          };
+          appState.purchaseRecords.push(newRecord);
+
+          const directoryProduct = appState.items.find(i => String(i.id) === String(itemId));
+          if (directoryProduct) {
+            directoryProduct.cost = unitCost;
+            directoryProduct.updatedAt = new Date().toISOString();
+          }
+          validSavedCount++;
+        }
+      });
+
+      if (validSavedCount === 0) {
+        showToast("No valid products selected in the batch. Please search and select products.", "error");
+        return;
+      }
+
+      saveState();
+      renderLedger();
+      renderDirectory();
+      closeModal('multiStockModal');
+      showToast(`Logged batch stock for ${validSavedCount} product(s)!`, "success");
     }
 
     function toggleDropdown(id, event) {
@@ -1438,6 +1743,7 @@
       const tbody = document.getElementById('directoryTableBody');
       const emptyState = document.getElementById('directoryEmptyState');
       tbody.innerHTML = '';
+      updateFooterItemCount();
 
       const query = document.getElementById('searchQuery').value.toLowerCase().trim();
       const selectedCat = document.getElementById('filterCategory').value;
